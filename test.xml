@@ -1,0 +1,104 @@
+<REC table="wos_master">
+    <UID>wos_master:wos_uid</UID>
+    <static_data>
+        <summary table="wos_summary">
+            <EWUID>
+                <WUID coll_id="wos_summary:coll_id" />
+                <edition table="wos_edition" value="wos_edition:edition" />
+            </EWUID>
+            <pub_info table="pub_info" coverdate="wos_summary:coverdate" has_abstract="wos_summary:has_abstract" issue="wos_summary:issue" pubmonth="wos_summary:pubmonth" pubtype="wos_summary:pubtype" pubyear="wos_summary:pubyear" sortdate="wos_summary:sortdate" vol="wos_summary:vol" season="wos_summary:season" pubday="wos_summary:pubday" edate="wos_summary:edate" voliss="wos_summary:voliss" supplement="wos_summary:supplement" special_issue="wos_summary:special_issue" part_no="wos_summary:part_no" medium="wos_summary:medium" model="wos_summary:model" indicator="wos_summary:indicator" inpi="wos_summary:inpi" is_archive="wos_summary:is_archive" city="wos_summary:city" country="wos_summary:country">
+                <page table="wos_page" begin="wos_page:page_begin" end="wos_page:page_end" page_count="wos_page:page_count">wos_page:page_value</page>
+            </pub_info>
+            <titles count="wos_summary:title_count">
+                <title table="wos_titles" type="wos_titles:title_type" lang_id="wos_titles:lang_id" translated="wos_titles:translated" non_english="wos_titles:non_english">wos_titles:title</title>
+            </titles>
+            <names count="wos_summary:name_count">
+                <name table="wos_summary_names" addr_no="wos_summary_names:addr_no_raw" role="wos_summary_names:role" reprint="wos_summary_names:reprint" lang_id="wos_summary_names:lang_id" r_id="wos_summary_names:r_id" r_id_tr="wos_summary_names:r_id_tr" orcid_id="wos_summary_names:orcid_id" orcid_id_tr="wos_summary_names:orcid_id_tr" dais_id="wos_summary_names:dais_id" display="wos_summary_names:display" seq_no="wos_summary_names:seq_no">
+                    <display_name>wos_summary_names:display_name</display_name>
+                    <full_name>wos_summary_names:full_name</full_name>
+                    <prefix>wos_summary_names:prefix</prefix>
+                    <wos_standard>wos_summary_names:wos_standard</wos_standard>
+                    <first_name>wos_summary_names:first_name</first_name>
+                    <middle_name>wos_summary_names:middle_name</middle_name>
+                    <initials>wos_summary_names:initials</initials>
+                    <last_name>wos_summary_names:last_name</last_name>
+                    <suffix>wos_summary_names:suffix</suffix>
+                    <email_addr table="wos_summary_names_email_addr" lang_id="wos_summary_names_email_addr:lang_id">wos_summary_names_email_addr:email_addr</email_addr>
+                </name>
+                <doctypes count="wos_summary:doctype_count">
+                    <doctype table="wos_doctypes" code="wos_doctypes:code">wos_doctypes:doctype</doctype>
+                </doctypes>
+                <conferences count="wos_summary:conference_count">
+                    <conference table="wos_conference" conf_id="wos_conference:conf_id">
+                        <conf_infos count="wos_conference:conf_info_count">
+                            <conf_info table="wos_conf_info" lang_id="wos_conf_info:lang_ind">wos_conf_info:conf_info</conf_info>
+                        </conf_infos>
+                        <conf_titles count="wos_conference:conf_title_count">
+                            <conf_title table="wos_conf_title" lang_id="wos_conf_title:lang_id">wos_conf_title:conf_title</conf_title>
+                        </conf_titles>
+                        <conf_dates count="wos_conference:conf_date_count">
+                            <conf_date table="wos_conf_date" lang_id="wos_conf_date:lang_id" conf_start="wos_conf_date:conf_start" conf_end="wos_comf_date:conf_end" display_date="wos_conf_date:display_date">wos_conf_date:conf_date</conf_date>
+                        </conf_dates>
+                        <conf_locations count="wos_conference:conf_location_count">
+                            <conf_location table="wos_conf_location">
+                                <composite_location lang_id="wos_conf_location:composite_lang_id">wos_conf_location:composite_location</composite_location>
+                                <conf_host lang_id="wos_conf_location:host_lang_id">wos_conf_location:conf_host</conf_host>
+                                <conf_city lang_id="wos_conf_location:city_lang_id">wos_conf_location:conf_city</conf_city>
+                                <conf_state lang_id="wos_conf_location:state_lang_id">wos_conf_location:conf_state</conf_state>
+                            </conf_location>
+                        </conf_locations>
+                        <sponsors count="wos_conference:sponsor_count">
+                            <sponsor table="wos_conf_sponsor" lang_id="wos_conf_sponsor:lang_id">wos_conf_sponsor:sponsor</sponsor>
+                        </sponsors>
+                        <conf_aux type="wos_conference:conf_type" lang_id="wos_conference:lang_id" />
+                    </conference>
+                </conferences>
+                <publishers>
+                    <publisher table="wos_publishers">
+                        <address_spec addr_no="wos_publishers:addr_no">
+                            <full_address>wos_publisher:full_address</full_address>
+                            <organizations count="wos_publishers:organization_count">
+                                <organization table="wos_publisher_organizations" lang_id="wos_publisher_organizations:lang_id">wos_publisher_organizations:organization</organization>
+                            </organizations>
+                            <suborganizations count="wos_publishers:suborganization_count">
+                                <suborganization table="wos_publisher_suborganizations" lang_id="wos_publisher_suborganizations:lang_id">wos_publisher_suborganizations:suborganization</suborganization>
+                            </suborganizations>
+                            <email_addr table="wos_spublisher_email_addr" lang_id="wos_publisher_email_addr:lang_id">wos_publisher_email_addr:email_addr</email_addr>
+                            <url_spec type="wos_publisher:url_type" date_info="wos_publisher:url_date_info" create_date="wos_publisher:url_create_date" revised_date="wos_publisher:url_revised_date" cited_date="wos_publisher:cited_date">
+                                <url>wos_publisher:url</url>
+                                <dois>
+                                    <doi table="wos_publisher_dois">wos_publisher_dois:doi</doi>
+                                </dois>
+                            </url_spec>
+                            <laboratory lang_id="wos_publisher:laboratory:lang_id">wos_publisher:laboratory</laboratory>
+                            <street lang_id="wos_publisher:street_lang_id">wos_publisher:street</street>
+                            <city lang_id="wos_publisher:city_lang_id">wos_publisher:city</city>
+                            <province lang_id="wos_publisher:province_lang_id">wos_publisher:province</province>
+                            <state lang_id="wos_publisher:state_lang_id">wos_publisher:state</state>
+                            <country lang_id="wos_publisher:country_lang_id">wos_publisher:country</country>
+                            <post_num lang_id="wos_publisher:post_num_lang_id">wos_publisher:post_num</post_num>
+                            <zip table="wos_publisher_zip" lang_id="wos_publisher_zip:lang_id" location="wos_publisher_zip:location">wos_publisher_zip:zip</zip>
+                        </address_spec>
+                        <names count="wos_publishers:name_count">
+                            <name table="wos_publisher_names" addr_no="wos_publisher_names:addr_no_raw" role="wos_publisher_names:role" reprint="wos_publisher_names:reprint" lang_id="wos_publisher_names:lang_id" r_id="wos_publisher_names:r_id" r_id_tr="wos_publisher_names:r_id_tr" orcid_id="wos_publisher_names:orcid_id" orcid_id_tr="wos_publisher_names:orcid_id_tr" dais_id="wos_publisher_names:dais_id" display="wos_publisher_names:display" seq_no="wos_publisher_names:seq_no">
+                                <display_name>wos_publisher_names:display_name</display_name>
+                                <full_name>wos_publisher_names:full_name</full_name>
+                                <prefix>wos_publisher_names:prefix</prefix>
+                                <wos_standard>wos_publisher_names:wos_standard</wos_standard>
+                                <first_name>wos_publisher_names:first_name</first_name>
+                                <middle_name>wos_publisher_names:middle_name</middle_name>
+                                <initials>wos_publisher_names:initials</initials>
+                                <last_name>wos_publisher_names:last_name</last_name>
+                                <suffix>wos_publisher_names:suffix</suffix>
+                                <email_addr table="wos_publisher_names_email_addr" lang_id="wos_publisher_names_email_addr:lang_id">wos_publisher_names_email_addr:email_addr</email_addr>
+                            </name>
+                        </names>
+                    </publisher>
+                </publishers>
+            </names>
+        </summary>
+        <fullrecord_metadata></fullrecord_metadata>
+        <item></item>
+    </static_data>
+    <dynamic_data></dynamic_data>
+</REC>
