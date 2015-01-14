@@ -6,7 +6,7 @@
 # import time
 from lxml import etree
 from optparse import OptionParser
-
+import unittest
 # TODO: The parser fails if there are comments or namespaces in the root. How do I fix this?
 # TODO: Finish this. For some reason, the arguments are not being taken
 parser = OptionParser()
@@ -48,24 +48,25 @@ id_list             = []
 reserved_keys       = [table_tag]
 table_list          = dict()
 temp_tables         = dict()
+storage             = []
 
 class Table():
     def __init__(self, table_name, fields, values):
         self.table_name = table_name
         self.fields     = fields
         self.values     = values
-        self.storage    = []
     def add(self, obj):
         for key, val in obj.iteritems():
-            self.fields.append(key)
-            self.values.append(val)
+            if key is not id_tag:
+                self.fields.append(key)
+                self.values.append(val)
         return self
     def clear(self):
         self.fields = []
         self.values = []
         return self
     def store(self):
-        self.storage.append(Table(self.table_name, self.fields, self.values))
+        storage.append(Table(self.table_name, self.fields, self.values))
         return self.clear()
     def stringify(self, coll):
         str = ''
@@ -75,22 +76,26 @@ class Table():
                 pass
             else:
                 str += '"' + item.strip() + '",'
-        return str
-    def sqlify(self, *args):
+        return str[:-1]
+    def sqlify(self, id, delete):
         fieldstr = self.stringify(self.fields)
         valuestr = self.stringify(self.values)
-        fieldstr = fieldstr[:-1]
-        valuestr = valuestr[:-1]
         try:
             assert len(self.fields) == len(self.values)
         except:
             print self.fields
             print self.values
             raise Exception('Length mismatch. Field(' + str(len(self.fields)) + ') !== value(' + str(len(self.values)) + ')')
-        if len(args) > 0:
-            return 'DELETE FROM "' + self.table_name + '" WHERE (' + id_tag + ' = ' + args[0] + ');\n'
+        if delete:
+            return 'DELETE FROM "' + self.table_name + '" WHERE ("' + id_tag + '" = "' + id + '");\n'
         else:
-            return 'INSERT INTO "' + self.table_name + '" (' + fieldstr + ') VALUES (' + valuestr + ');\n'
+            try:
+                assert 'UID' not in self.fields
+                assert len(self.fields) > 0
+                return 'INSERT INTO "' + self.table_name + '" (' + '"' + id_tag + '",' + fieldstr + ') VALUES ("' + id + '",' + valuestr + ');\n'
+            except Exception, e:
+                print e
+                pass
 def find_table(tblstr):
     if tblstr in table_list:
         pass
@@ -105,7 +110,7 @@ def find_table(tblstr):
 # def parse(fp, source, schema):
 def parse(source, schema):
     with open(output_file_name, 'w') as output_file:
-        context = etree.iterparse(source, events=('start', 'end'))
+        context = etree.iterparse(source, events=('start', 'end'), remove_comments=True)
         path = []
         curr_table = None
         schema_match = None
@@ -125,10 +130,6 @@ def parse(source, schema):
                 path.append(elem)
                 try:
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]])[len(record_tag):])
-                    # schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]])[len(record_tag):])
-                    # table_something = schema_match.get(table_tag)
-                    # if table_something is not None:
-                    #     curr_table = find_table(table_something)
                 except SyntaxError:
                     pass
             # *********************************************************
@@ -140,27 +141,37 @@ def parse(source, schema):
                 assert event == 'end'
                 path.pop()
                 if elem.tag == record_tag:
-                    assert primary_key is not None
+                    try:
+                        assert primary_key is not None
+                    except AssertionError:
+                        raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
+                        # TODO: Pause the parse here.
+                        return False
                     delete = False
                     if primary_key in id_list:
                         delete = True
+                    else:
+                        id_list.append(primary_key)
                     to_write = []
                     to_reverse_then_write = []
+                    # TODO: This can be cleaned up a bit.
                     for table in table_list:
-                        id_list.append(primary_key)
                         curr_table = find_table(table)
-                        for stored in curr_table.storage:
-                            if len(stored.fields) > 0:
-                                to_write.append(stored.add({id_tag: primary_key}).sqlify())
-                        if delete:
-                            if len(stored.fields) > 0:
-                                to_reverse_then_write.append(curr_table.sqlify(primary_key))
-                        if len(curr_table.fields) > 0:
-                            to_write.append(curr_table.add({id_tag: primary_key}).sqlify())
+                        for stored in storage:
+                            to_write.append(stored.add({id_tag: primary_key}).sqlify(primary_key, False))
+                            if delete:
+                                to_reverse_then_write.append(curr_table.sqlify(primary_key, True))
+                        to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
                     for x in reversed(to_reverse_then_write):
-                        output_file.write(x.encode('utf-8'))
+                        try:
+                            output_file.write(x.encode('utf-8'))
+                        except:
+                            pass
                     for x in to_write:
-                        output_file.write(x.encode('utf-8'))
+                        try:
+                            output_file.write(x.encode('utf-8'))
+                        except:
+                            pass
                     table_list.clear()
 # *********************************************************
 #   XML parser.
@@ -168,6 +179,10 @@ def parse(source, schema):
             if schema_match is not None:
                 attrib_table = None
                 attrib_field = None
+                if schema_match.get(table_tag) is not None:
+                    attrib_table = schema_match.get(table_tag)
+                    find_table(attrib_table).store()
+
                 # *********************************************************
                 #   Tag attribute items. Ex: <tag attribute="attribute value">
                 #       Match the schema tag to the data tag. Use the
@@ -177,7 +192,9 @@ def parse(source, schema):
                 #       handled by splitting a string if the delimiter
                 #       exists.
                 # *********************************************************
-                if elem.attrib.items() and schema_match.attrib.items():
+                try:
+                    assert len(elem.attrib.items()) > 0
+                    assert len(schema_match.attrib.items()) > 0
                     for key, value in elem.attrib.items():
                         schema_attrib = schema_match.get(key)
                         try:
@@ -185,6 +202,7 @@ def parse(source, schema):
                                 attrib_split = schema_attrib.split(delimiter)
                                 assert len(attrib_split) == 2
                                 if schema_match.attrib.get('table') is not None:
+                                    # TODO; CHECK NEW?
                                     find_table(attrib_split[0]).store()
                                 find_table(attrib_split[0]).add({attrib_split[1]: value})
                         except TypeError, e:
@@ -193,7 +211,10 @@ def parse(source, schema):
                         except AssertionError, e:
                             #TODO: What to do here?
                             pass
-                        #SUB1
+                            #SUB1
+                except:
+                    #TODO: What to do here?
+                    pass
                 # *********************************************************
                 #   Tag element text. Ex: <tag>tag element text
                 #       Match the schema text to the data text. Use the
@@ -202,32 +223,67 @@ def parse(source, schema):
                 #       table as well. That is handled by splitting a
                 #       string if the delimiter exists.
                 # *********************************************************
-                if elem.text and schema_match.text:
+                try:
+                    assert len(elem.text) > 0
+                    assert len(schema_match.text) > 0
                     if delimiter in schema_match.text:
                         attrib_split = schema_match.text.split(delimiter)
+                        # if schema_match.attrib.get('table') is not None:
+                        #     find_table(attrib_split[0]).store()
                         attrib_table = find_table(attrib_split[0])
                         attrib_field = attrib_split[1]
-                    elif curr_table is not None:
-                        attrib_table = curr_table
-                        attrib_field = schema_match.text
-                    else:
-                        #TODO: What to do here?
-                        pass
-                attrib_value = elem.text
+                        # elif curr_table is not None:
+                        #     attrib_table = curr_table
+                        #     attrib_field = schema_match.text
+                    attrib_value = elem.text
+                    # else:
+                    #     pass
+                except:
+                    #TODO: What to do here?
+                    pass
+                # *********************************************************
+                #   Add the fields to the current table for final
+                #   string building.
+                # *********************************************************
                 try:
-                    if len(attrib_field.strip()) > 0:
-                        attrib_table.fields.append(attrib_field)
-                        attrib_table.values.append(attrib_value)
+                    assert len(attrib_field.strip()) > 0
+                    assert len(attrib_value.strip()) > 0
+                    attrib_table.fields.append(attrib_field)
+                    attrib_table.values.append(attrib_value)
+                except AssertionError:
+                    pass
                 except AttributeError:
                     pass
-            # except SyntaxError as syntax:
-            #   # raise Exception('Data does not fit with schema')
-            #   pass
             elem.clear()
-            # delete previous siblings
+
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
+    return True
 
+class TableClass_Add(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('test_table', [], []).add({'test_field':'test_value'}).sqlify(primary_key), 'INSERT INTO "test_table" ("test_field") VALUES ("test_value");\n')
+class TableClass_Clear(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('test_table', ['test_field'], ['test_value']).clear().sqlify(primary_key), 'INSERT INTO "test_table" () VALUES ();\n')
+# class TableClass_Store(unittest.TestCase):
+#     def test(self):
+#         self.assertEqual(Table('test_table', ['test_field'], ['test_value']).store().sqlify(), 'INSERT INTO "test_table" () VALUES ();\n')
+#         self.assertEqual(len(Table('test_table', ['test_field'], ['test_value']).store().storage), 1)
+class TableClass_Stringify(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('', [], []).stringify(['Test', '1', '2']), '"Test","1","2"')
+        self.assertEqual(Table('', [], []).stringify(['', '', '']), '')
+        self.assertTrue(True)
+# class TableClass_SQLify(unittest.TestCase):
+#     def test(self):
+#         self.assertEqual(Table('test_table', [], []).sqlify(primary_key), 'INSERT INTO "test_table" () VALUES ();\n')
+#         self.assertEqual(Table('test_table', ['test_field'], ['test_value']).sqlify(primary_key), 'INSERT INTO "test_table" ("test_field") VALUES ("test_value");\n')
+#         self.assertEqual(Table('test_table', [], []).sqlify('primary_key'), 'DELETE FROM "test_table" WHERE ("UID" = "primary_key");\n')
+#         self.assertRaises(Exception, Table('test_table', [], ['test_value']))
+#         self.assertRaises(Exception, Table('test_table', ['test_field'], []))
+#         # TODO: Disconnect the file write for the test.
+#         self.assertTrue(parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml')))
 # Based on http://stackoverflow.com/questions/9809469/python-sax-to-lxml-for-80gb-xml
 class InfiniteXML (object):
     def __init__(self):
@@ -237,10 +293,8 @@ class InfiniteXML (object):
             self._root=False
             return '<?xml version="1.0" encoding="UTF-8" ?>\n'
         else:
-            # TODO: What should I do with this?
+            #TODO: What to do here?
             return ''
-
+parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
+# parse(data_file, etree.parse(schema_file))
 # parse(InfiniteXML(), data_file, etree.parse(schema_file))
-parse(data_file, etree.parse(schema_file))
-
-

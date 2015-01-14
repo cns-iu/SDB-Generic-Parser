@@ -20,17 +20,6 @@ Soon we will support command line arguments to prevent the need to modify a scri
 | -r | --recordtag | identifying tag for the records |
 | -i | --idtag | primary identifier across tables |
   
-### Current Issues
-
-| Blocker        | Description               |
-| :-------------: |:-------------:|
-| Y | Have an xmlns attribute kills the parser. |
-| Y | Comments are processed and stop the parser. |
-| N | Command line arguments are not being taken. |
-| Y | UIDs need verified. |
-| N | Exceptions, tests, and conditions need verified. |
-
-
   
 ### Credits
 TODO: Put something here
