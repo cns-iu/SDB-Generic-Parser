@@ -3,8 +3,11 @@ IAI-Generic-Parser
 ### Description
 This is a generic parser for IAI. This parser will load a schema XML into memory and reference it as a data file is fed into an iterative parser. For each record, the parser will map the data XPath to the schema and build SQL statements accordingly. 
 
-### Installation
-I dunno. It's a Python project. Do what you do, I guess.
+### Requirements
+lxml - Quick XML parser based on the C libraries libxml2 and libxslt
+
+OptionParser - Flexible library for parsing command-line options
+
 
 ### Usage
 Run test.py (TODO: change that name) from the command line.
