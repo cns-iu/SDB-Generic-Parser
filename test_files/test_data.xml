@@ -2,7 +2,6 @@
 <records>
     <!--Test1 -->
     <REC>
-
         <UID>test:000000</UID>
         <summary>
             <property1 property1_attrib1="attrib1_1_value" />
@@ -28,10 +27,10 @@
             <property1 property1_attrib1="attrib1_1_value" />
             <property2 property2_attrib1="attrib2_1_value" property2_attrib2="attrib2_2_value">Property Two Text Element</property2>
             <property3>Property Three Text Element</property3>
-            <property5>
-                <property_count property5_attrib1="property_1_value">Property Four Text Element (Count: 1)</property_count>
-                <property_count property5_attrib1="property_2_value">Property Four Text Element (Count: 2)</property_count>
-            </property5>
+            <property4>
+                <property_count property4_attrib1="property_1_value">Property Four Text Element (Count: 1)</property_count>
+                <property_count property4_attrib1="property_2_value">Property Four Text Element (Count: 2)</property_count>
+            </property4>
         </summary>
     </REC>
     <!--
@@ -41,4 +40,38 @@
         INSERT INTO "temp_table1" ("UID","property5_attrib1","property5_text_element") VALUES ("test:000001","property_1_value","Property Four Text Element (Count: 1)");
         INSERT INTO "temp_table1" ("UID","property5_attrib1","property5_text_element") VALUES ("test:000001","property_2_value","Property Four Text Element (Count: 2)");    -->
 
+
+    <!--Test3 -->
+    <REC>
+        <summary>
+            <UID>test:000003</UID>
+            <property1 property1_attrib1="attrib1_1_value" />
+            <property2 property2_attrib1="attrib2_1_value" property2_attrib2="attrib2_2_value">Property Two Text Element</property2>
+            <property3>Property Three Text Element</property3>
+            <property4>
+                <property_count property4_attrib1="property_1_value">Property Four Text Element (Count: 1)</property_count>
+                <property_count property4_attrib1="property_2_value">Property Four Text Element (Count: 2)</property_count>
+            </property4>
+        </summary>
+    </REC>
+    <!--
+    Excepted:
+        TODO: What's going to happen, I wonder
+    -->
+    <!--Test4 -->
+    <REC>
+        <summary>
+            <UID>test:000004</UID>
+            <property1 property1_attrib1="attrib1_1_value" />
+            <property2 property2_attrib1="attrib2_1_value" property2_attrib2="attrib2_2_value">Property Two Text Element</property2>
+            <property3>Property Three Text Element</property3>
+            <property6>
+                <property_count property4_attrib1="property_1_value">Property Six Text Element. No delimiter in schema.</property_count>
+            </property6>
+        </summary>
+    </REC>
+    <!--
+    Excepted:
+        TODO: What's going to happen, I wonder
+    -->
 </records>

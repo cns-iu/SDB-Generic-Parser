@@ -1,8 +1,8 @@
-<REC table="asdf">
+<REC table="temp_table1">
     <UID>temp_table1:UID</UID>
-    <summary table="temp_table1">
+    <summary table="temp_table_master">
         <property1 property1_attrib1="temp_table1:property1_attrib1" />
-        <property2 property2_attrib1="temp_table1:property2_attrib1" property2_attrib2="temp_table1:property2_attrib2">temp_table1:property2_text_element</property2>
+        <property2 table="boogaboogaboo" property2_attrib1="temp_table1:property2_attrib1" property2_attrib2="temp_table1:property2_attrib2">temp_table1:property2_text_element</property2>
         <property3>temp_table1:property3_text_element</property3>
         <property4 table="temp_table1">
             <property_count property4_attrib1="temp_table1:property4_attrib1">temp_table1:property4_text_element</property_count>
@@ -10,5 +10,8 @@
         <property5>
             <property_count table="temp_table1" property5_attrib1="temp_table1:property5_attrib1">temp_table1:property5_text_element</property_count>
         </property5>
+        <property6>
+            <property_count property5_attrib1="temp_table1:property5_attrib1">property5_text_element</property_count>
+        </property6>
     </summary>
 </REC>

@@ -46,9 +46,6 @@ delimiter           = ':'
 table_tag           = 'table'
 id_list             = []
 reserved_keys       = [table_tag]
-table_list          = dict()
-temp_tables         = dict()
-storage             = []
 
 class Table():
     def __init__(self, table_name, fields, values):
@@ -65,7 +62,7 @@ class Table():
         self.fields = []
         self.values = []
         return self
-    def store(self):
+    def store(self, storage):
         storage.append(Table(self.table_name, self.fields, self.values))
         return self.clear()
     def stringify(self, coll):
@@ -94,25 +91,23 @@ class Table():
                 assert len(self.fields) > 0
                 return 'INSERT INTO "' + self.table_name + '" (' + '"' + id_tag + '",' + fieldstr + ') VALUES ("' + id + '",' + valuestr + ');\n'
             except Exception, e:
-                print e
                 pass
-def find_table(tblstr):
+def find_table(table_list, tblstr):
     if tblstr in table_list:
         pass
     else:
         table_list[tblstr] = Table(tblstr, [], [])
-    try:
-        assert table_list[tblstr] is not None
-    except:
-        raise Exception(tblstr + ' is not in table_list. WHATD YOU DO?!')
     return table_list[tblstr]
+
 
 # def parse(fp, source, schema):
 def parse(source, schema):
     with open(output_file_name, 'w') as output_file:
         context = etree.iterparse(source, events=('start', 'end'), remove_comments=True)
         path = []
-        curr_table = None
+        table_list = dict()
+        storage = []
+        temp_table = ''
         schema_match = None
         primary_key = None
         for event, elem in context:
@@ -127,6 +122,8 @@ def parse(source, schema):
             if event == 'start':
                 if elem.tag == id_tag:
                     primary_key = elem.text
+                if elem.tag == record_tag:
+                    output_file.write('==========================================================\n')
                 path.append(elem)
                 try:
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]])[len(record_tag):])
@@ -155,12 +152,15 @@ def parse(source, schema):
                     to_write = []
                     to_reverse_then_write = []
                     # TODO: This can be cleaned up a bit.
+
                     for table in table_list:
-                        curr_table = find_table(table)
-                        for stored in storage:
-                            to_write.append(stored.add({id_tag: primary_key}).sqlify(primary_key, False))
+                        curr_table = find_table(table_list, table)
+                        while len(storage) > 0:
+                            to_write.append(storage[-1].add({id_tag: primary_key}).sqlify(primary_key, False))
                             if delete:
                                 to_reverse_then_write.append(curr_table.sqlify(primary_key, True))
+                            storage.pop()
+                        storage = []
                         to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
                     for x in reversed(to_reverse_then_write):
                         try:
@@ -172,7 +172,6 @@ def parse(source, schema):
                             output_file.write(x.encode('utf-8'))
                         except:
                             pass
-                    table_list.clear()
 # *********************************************************
 #   XML parser.
 # *********************************************************
@@ -181,7 +180,7 @@ def parse(source, schema):
                 attrib_field = None
                 if schema_match.get(table_tag) is not None:
                     attrib_table = schema_match.get(table_tag)
-                    find_table(attrib_table).store()
+                    find_table(table_list, attrib_table).store(storage)
 
                 # *********************************************************
                 #   Tag attribute items. Ex: <tag attribute="attribute value">
@@ -203,8 +202,8 @@ def parse(source, schema):
                                 assert len(attrib_split) == 2
                                 if schema_match.attrib.get('table') is not None:
                                     # TODO; CHECK NEW?
-                                    find_table(attrib_split[0]).store()
-                                find_table(attrib_split[0]).add({attrib_split[1]: value})
+                                    find_table(table_list, attrib_split[0]).store(storage)
+                                find_table(table_list, attrib_split[0]).add({attrib_split[1]: value})
                         except TypeError, e:
                             #TODO: What to do here?
                             pass
@@ -229,15 +228,25 @@ def parse(source, schema):
                     if delimiter in schema_match.text:
                         attrib_split = schema_match.text.split(delimiter)
                         # if schema_match.attrib.get('table') is not None:
-                        #     find_table(attrib_split[0]).store()
-                        attrib_table = find_table(attrib_split[0])
+                        #     find_table(table_list, attrib_split[0]).store(storage)
+                        attrib_table = find_table(table_list, attrib_split[0])
                         attrib_field = attrib_split[1]
                         # elif curr_table is not None:
                         #     attrib_table = curr_table
                         #     attrib_field = schema_match.text
+                    else:
+                        curr_tag = None
+                        i = -1
+                        while curr_tag is None:
+                            parent_search = schema.find('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
+                            try:
+                                curr_tag = parent_search.get(table_tag)
+                            except:
+                                pass
+                            i -= 1
+                        attrib_table = find_table(table_list, curr_tag)
+                        attrib_field = schema_match.text
                     attrib_value = elem.text
-                    # else:
-                    #     pass
                 except:
                     #TODO: What to do here?
                     pass
@@ -260,26 +269,26 @@ def parse(source, schema):
                 del elem.getparent()[0]
     return True
 
-class TableClass_Add(unittest.TestCase):
-    def test(self):
-        self.assertEqual(Table('test_table', [], []).add({'test_field':'test_value'}).sqlify(primary_key), 'INSERT INTO "test_table" ("test_field") VALUES ("test_value");\n')
-class TableClass_Clear(unittest.TestCase):
-    def test(self):
-        self.assertEqual(Table('test_table', ['test_field'], ['test_value']).clear().sqlify(primary_key), 'INSERT INTO "test_table" () VALUES ();\n')
+# class TableClass_Add(unittest.TestCase):
+#     def test(self):
+#         self.assertEqual(Table('test_table', [], []).add({'test_field':'test_value'}).sqlify('uid:test', False), 'INSERT INTO "test_table" ("UID","test_field") VALUES ("uid:test","test_value");\n')
+# class TableClass_Clear(unittest.TestCase):
+#     def test(self):
+#         self.assertEqual(Table('test_table', ['test_field'], ['test_value']).clear().sqlify('uid:test', False), None)
 # class TableClass_Store(unittest.TestCase):
 #     def test(self):
-#         self.assertEqual(Table('test_table', ['test_field'], ['test_value']).store().sqlify(), 'INSERT INTO "test_table" () VALUES ();\n')
-#         self.assertEqual(len(Table('test_table', ['test_field'], ['test_value']).store().storage), 1)
-class TableClass_Stringify(unittest.TestCase):
-    def test(self):
-        self.assertEqual(Table('', [], []).stringify(['Test', '1', '2']), '"Test","1","2"')
-        self.assertEqual(Table('', [], []).stringify(['', '', '']), '')
-        self.assertTrue(True)
+#         self.assertEqual(Table('test_table', ['test_field'], ['test_value']).store([]).sqlify('uid:test', False), None)
+#         self.assertEqual(len(Table('test_table', ['test_field'], ['test_value']).store([]).storage), 1)
+# class TableClass_Stringify(unittest.TestCase):
+#     def test(self):
+#         self.assertEqual(Table('', [], []).stringify(['Test', '1', '2']), '"Test","1","2"')
+#         self.assertEqual(Table('', [], []).stringify(['', '', '']), '')
+#         self.assertTrue(True)
 # class TableClass_SQLify(unittest.TestCase):
 #     def test(self):
-#         self.assertEqual(Table('test_table', [], []).sqlify(primary_key), 'INSERT INTO "test_table" () VALUES ();\n')
-#         self.assertEqual(Table('test_table', ['test_field'], ['test_value']).sqlify(primary_key), 'INSERT INTO "test_table" ("test_field") VALUES ("test_value");\n')
-#         self.assertEqual(Table('test_table', [], []).sqlify('primary_key'), 'DELETE FROM "test_table" WHERE ("UID" = "primary_key");\n')
+#         self.assertEqual(Table('test_table', [], []).sqlify('uid:test', False), None)
+#         self.assertEqual(Table('test_table', ['test_field'], ['test_value']).sqlify('uid:test', False), 'INSERT INTO "test_table" ("UID","test_field") VALUES ("uid:test","test_value");\n')
+#         self.assertEqual(Table('test_table', [], []).sqlify('uid:test', True), 'DELETE FROM "test_table" WHERE ("UID" = "uid:test");\n')
 #         self.assertRaises(Exception, Table('test_table', [], ['test_value']))
 #         self.assertRaises(Exception, Table('test_table', ['test_field'], []))
 #         # TODO: Disconnect the file write for the test.
