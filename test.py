@@ -99,17 +99,28 @@ def find_table(table_list, tblstr):
         table_list[tblstr] = Table(tblstr, [], [])
     return table_list[tblstr]
 
+def find_parent_table(schema, path, table_list):
+    curr_tag = None
+    i = -1
+    while curr_tag is None:
+        parent_search = schema.find('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
+        try:
+            curr_tag = parent_search.get(table_tag)
+        except:
+            pass
+        i -= 1
+    return find_table(table_list, curr_tag)
 
 # def parse(fp, source, schema):
 def parse(source, schema):
     with open(output_file_name, 'w') as output_file:
         context = etree.iterparse(source, events=('start', 'end'), remove_comments=True)
         path = []
-        table_list = dict()
-        storage = []
-        temp_table = ''
-        schema_match = None
         primary_key = None
+        storage = []
+        schema_match = None
+        table_list = dict()
+        table_list.clear()
         for event, elem in context:
 # *********************************************************
 #   XML event catchers.
@@ -172,12 +183,16 @@ def parse(source, schema):
                             output_file.write(x.encode('utf-8'))
                         except:
                             pass
+                    storage = []
+                    table_list.clear()
+
 # *********************************************************
 #   XML parser.
 # *********************************************************
             if schema_match is not None:
                 attrib_table = None
                 attrib_field = None
+                attrib_value = None
                 if schema_match.get(table_tag) is not None:
                     attrib_table = schema_match.get(table_tag)
                     find_table(table_list, attrib_table).store(storage)
@@ -204,6 +219,23 @@ def parse(source, schema):
                                     # TODO; CHECK NEW?
                                     find_table(table_list, attrib_split[0]).store(storage)
                                 find_table(table_list, attrib_split[0]).add({attrib_split[1]: value})
+                            else:
+                                curr_tag = None
+                                i = -1
+                                while curr_tag is None:
+                                    parent_search = schema.find('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
+                                    try:
+                                        curr_tag = parent_search.get(table_tag)
+                                    except:
+                                        pass
+                                    i -= 1
+                                # print curr_tag
+                                # print schema_match.get(key)
+                                # print elem.get(key)
+                                find_table(table_list, curr_tag).add({schema_match.get(key):elem.get(key)})
+                            # attrib_field = schema_match.get(key)
+                            # attrib_value = elem.get(key)
+
                         except TypeError, e:
                             #TODO: What to do here?
                             pass
@@ -211,6 +243,7 @@ def parse(source, schema):
                             #TODO: What to do here?
                             pass
                             #SUB1
+
                 except:
                     #TODO: What to do here?
                     pass
@@ -227,27 +260,18 @@ def parse(source, schema):
                     assert len(schema_match.text) > 0
                     if delimiter in schema_match.text:
                         attrib_split = schema_match.text.split(delimiter)
-                        # if schema_match.attrib.get('table') is not None:
-                        #     find_table(table_list, attrib_split[0]).store(storage)
                         attrib_table = find_table(table_list, attrib_split[0])
                         attrib_field = attrib_split[1]
-                        # elif curr_table is not None:
-                        #     attrib_table = curr_table
-                        #     attrib_field = schema_match.text
                     else:
-                        curr_tag = None
-                        i = -1
-                        while curr_tag is None:
-                            parent_search = schema.find('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
-                            try:
-                                curr_tag = parent_search.get(table_tag)
-                            except:
-                                pass
-                            i -= 1
-                        attrib_table = find_table(table_list, curr_tag)
+                        attrib_table = find_parent_table(schema, path, table_list)
+                        print attrib_table
                         attrib_field = schema_match.text
+                    # print elem
+                    # print elem.text
                     attrib_value = elem.text
-                except:
+
+                except Exception, e:
+                    print e
                     #TODO: What to do here?
                     pass
                 # *********************************************************
@@ -257,11 +281,12 @@ def parse(source, schema):
                 try:
                     assert len(attrib_field.strip()) > 0
                     assert len(attrib_value.strip()) > 0
-                    attrib_table.fields.append(attrib_field)
-                    attrib_table.values.append(attrib_value)
-                except AssertionError:
+                    attrib_table.add({attrib_field: attrib_value})
+                except AssertionError, e:
+                    # print e
                     pass
-                except AttributeError:
+                except AttributeError, e:
+                    # print e
                     pass
             elem.clear()
 
