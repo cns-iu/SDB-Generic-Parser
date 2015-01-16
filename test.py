@@ -18,6 +18,10 @@ parser.add_option(
         action='store', type='string', dest='unique_identifier',
         help='I dont know how to word this. Default: \'UID\'')
 parser.add_option(
+        '-m', '--master_table',
+        action='store', type='string', dest='master_table',
+        help='the name of the master table. When checking for a duplicate record, what table should we delete from to trigger the cascade delete. Default: \'wos:master\'')
+parser.add_option(
         '-o', '--output_file',
         action='store', type='string', dest='output_file',
         help='the name and relative path of the file to write to. Default: \'queries.txt\'')
@@ -41,9 +45,9 @@ parent_tag          = options.parent_tag        or 'records'
 output_file_name    = options.output_file       or 'queries.txt'
 record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
+master_table        = options.master_table       or 'wos:master'
 delimiter           = ':'
 table_tag           = 'table'
-id_list             = []
 reserved_keys       = [table_tag]
 
 class Table():
@@ -82,15 +86,12 @@ class Table():
             print self.fields
             print self.values
             raise Exception('Length mismatch. Field(' + str(len(self.fields)) + ') !== value(' + str(len(self.values)) + ')')
-        if delete:
-            return 'DELETE FROM "' + self.table_name + '" WHERE ("' + id_tag + '" = "' + id + '");\n'
-        else:
-            try:
-                assert 'UID' not in self.fields
-                assert len(self.fields) > 0
-                return 'INSERT INTO "' + self.table_name + '" (' + '"' + id_tag + '",' + fieldstr + ') VALUES ("' + id + '",' + valuestr + ');\n'
-            except Exception, e:
-                pass
+        try:
+            assert 'UID' not in self.fields
+            assert len(self.fields) > 0
+            return 'INSERT INTO "' + self.table_name + '" (' + '"' + id_tag + '",' + fieldstr + ') VALUES ("' + id + '",' + valuestr + ');\n'
+        except Exception, e:
+            pass
 def find_table(table_list, tblstr):
     if tblstr in table_list:
         pass
@@ -110,11 +111,6 @@ def find_parent_table(schema, path, table_list):
             pass
         i -= 1
     return find_table(table_list, curr_tag)
-
-def add_to_list(add_list, remove_list, curr_table, primary_key, delete):
-    add_list.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
-    if delete:
-        remove_list.append(curr_table.sqlify(primary_key, True))
 
 # def parse(fp, source, schema):
 def parse(source, schema):
@@ -139,7 +135,7 @@ def parse(source, schema):
                 if elem.tag == id_tag:
                     primary_key = elem.text
                 if elem.tag == record_tag:
-                    output_file.write('==========================================================\n')
+                    output_file.write('--------------------------------------------\n')
                 path.append(elem)
                 try:
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]])[len(record_tag):])
@@ -161,26 +157,27 @@ def parse(source, schema):
                         raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
                         # TODO: Pause the parse here.
                         return False
-                    delete = False
-                    if primary_key in id_list:
-                        delete = True
-                    else:
-                        id_list.append(primary_key)
                     to_write = []
-                    to_reverse_then_write = []
                     for table in table_list:
                         curr_table = find_table(table_list, table)
                         while len(storage) > 0:
-                            add_to_list(to_write, to_reverse_then_write, storage[-1], primary_key, delete)
+                            to_write.append(storage[-1].add({id_tag: primary_key}).sqlify(primary_key, False))
                             storage.pop()
                         storage = []
-                        add_to_list(to_write, to_reverse_then_write, curr_table, primary_key, delete)
-                    for x in list(set(reversed(to_reverse_then_write))) + to_write:
+                        to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
+                    storage = []
+
+                    output_file.write('BEGIN\n')
+                    output_file.write('\tIF SELECT EXISTS(SELECT 1 FROM "' + master_table + '" WHERE "' + id_tag + '"="' + primary_key + '")\n')
+                    output_file.write('\t\tTHEN\n')
+                    output_file.write('\t\t\tDELETE FROM "' + master_table + '" WHERE ' + id_tag + '="' + primary_key + '")\n')
+                    output_file.write('END IF\n')
+                    for x in to_write:
                         try:
-                            output_file.write(x.encode('utf-8'))
+                            output_file.write('\t\t' + x.encode('utf-8'))
                         except:
                             pass
-                    storage = []
+                    output_file.write('COMMIT\n')
                     table_list.clear()
 
 # *********************************************************
