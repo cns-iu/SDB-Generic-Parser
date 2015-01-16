@@ -101,9 +101,11 @@ def find_table(table_list, tblstr):
 
 def find_parent_table(schema, path, table_list):
     curr_tag = None
+
     i = -1
     while curr_tag is None:
-        parent_search = schema.find('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
+        something = ('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
+        parent_search = schema.find(something)
         try:
             curr_tag = parent_search.get(table_tag)
         except:
@@ -157,6 +159,7 @@ def parse(source, schema):
                         return False
                     delete = False
                     if primary_key in id_list:
+                        # TODO: This isn't working out too well :(
                         delete = True
                     else:
                         id_list.append(primary_key)
@@ -220,19 +223,12 @@ def parse(source, schema):
                                     find_table(table_list, attrib_split[0]).store(storage)
                                 find_table(table_list, attrib_split[0]).add({attrib_split[1]: value})
                             else:
-                                curr_tag = None
-                                i = -1
-                                while curr_tag is None:
-                                    parent_search = schema.find('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
-                                    try:
-                                        curr_tag = parent_search.get(table_tag)
-                                    except:
-                                        pass
-                                    i -= 1
-                                # print curr_tag
-                                # print schema_match.get(key)
-                                # print elem.get(key)
-                                find_table(table_list, curr_tag).add({schema_match.get(key):elem.get(key)})
+                                table = None
+                                if schema_match.get(table_tag) is not None:
+                                    table = find_table(table_list, schema_match.get(table_tag))
+                                else:
+                                    table = find_parent_table(schema, path, table_list)
+                                table.add({schema_match.get(key): elem.get(key)})
                             # attrib_field = schema_match.get(key)
                             # attrib_value = elem.get(key)
 
@@ -264,14 +260,12 @@ def parse(source, schema):
                         attrib_field = attrib_split[1]
                     else:
                         attrib_table = find_parent_table(schema, path, table_list)
-                        print attrib_table
                         attrib_field = schema_match.text
                     # print elem
                     # print elem.text
                     attrib_value = elem.text
 
                 except Exception, e:
-                    print e
                     #TODO: What to do here?
                     pass
                 # *********************************************************
@@ -329,6 +323,6 @@ class InfiniteXML (object):
         else:
             #TODO: What to do here?
             return ''
-parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
-# parse(data_file, etree.parse(schema_file))
+# parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
+parse(data_file, etree.parse(schema_file))
 # parse(InfiniteXML(), data_file, etree.parse(schema_file))

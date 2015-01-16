@@ -71,6 +71,14 @@
             </property4_mod3>
         </summary>
     </REC>
+    <REC>
+        <summary>
+            <UID>test:000004</UID>
+            <property4_mod3>
+                <property_count property4_3_attrib1="property4_1_value_no_delimiter">Property Four (3) Text Element. No delimiter in schema.</property_count>
+            </property4_mod3>
+        </summary>
+    </REC>
     <!--
     Excepted:
         TODO: What's going to happen, I wonder

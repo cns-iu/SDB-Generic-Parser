@@ -12,7 +12,7 @@
             <property_count table="temp_table1" property4_1_attrib1="temp_table1:property4_1_attrib1">temp_table1:property4_1_text_element</property_count>
         </property4_mod1>
         <property4_mod2>
-            <property_count property4_2_attrib1="temp_table1:property4_2_attrib1">property4_2_text_element</property_count>
+            <property_count property4_2_attrib1="property4_2_attrib1">property4_2_text_element</property_count>
         </property4_mod2>
         <property4_mod3>
             <property_count table="temp_table1" property4_3_attrib1="property4_3_attrib1">property4_3_text_element</property_count>
