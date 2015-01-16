@@ -8,7 +8,6 @@ from lxml import etree
 from optparse import OptionParser
 import unittest
 # TODO: The parser fails if there are comments or namespaces in the root. How do I fix this?
-# TODO: Finish this. For some reason, the arguments are not being taken
 parser = OptionParser()
 parser.add_option(
         '-d', '--data_file',
@@ -101,7 +100,6 @@ def find_table(table_list, tblstr):
 
 def find_parent_table(schema, path, table_list):
     curr_tag = None
-
     i = -1
     while curr_tag is None:
         something = ('/'.join([str(x.tag) for x in path[1:i]])[len(record_tag):])
@@ -112,6 +110,11 @@ def find_parent_table(schema, path, table_list):
             pass
         i -= 1
     return find_table(table_list, curr_tag)
+
+def add_to_list(add_list, remove_list, curr_table, primary_key, delete):
+    add_list.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
+    if delete:
+        remove_list.append(curr_table.sqlify(primary_key, True))
 
 # def parse(fp, source, schema):
 def parse(source, schema):
@@ -140,7 +143,8 @@ def parse(source, schema):
                 path.append(elem)
                 try:
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]])[len(record_tag):])
-                except SyntaxError:
+                # Error occurs when the schema can't be matched. It can be ignored for now, but we could increase performance by fixing it.
+                except SyntaxError, e:
                     pass
             # *********************************************************
             #   End event.
@@ -159,29 +163,19 @@ def parse(source, schema):
                         return False
                     delete = False
                     if primary_key in id_list:
-                        # TODO: This isn't working out too well :(
                         delete = True
                     else:
                         id_list.append(primary_key)
                     to_write = []
                     to_reverse_then_write = []
-                    # TODO: This can be cleaned up a bit.
-
                     for table in table_list:
                         curr_table = find_table(table_list, table)
                         while len(storage) > 0:
-                            to_write.append(storage[-1].add({id_tag: primary_key}).sqlify(primary_key, False))
-                            if delete:
-                                to_reverse_then_write.append(curr_table.sqlify(primary_key, True))
+                            add_to_list(to_write, to_reverse_then_write, storage[-1], primary_key, delete)
                             storage.pop()
                         storage = []
-                        to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
-                    for x in reversed(to_reverse_then_write):
-                        try:
-                            output_file.write(x.encode('utf-8'))
-                        except:
-                            pass
-                    for x in to_write:
+                        add_to_list(to_write, to_reverse_then_write, curr_table, primary_key, delete)
+                    for x in list(set(reversed(to_reverse_then_write))) + to_write:
                         try:
                             output_file.write(x.encode('utf-8'))
                         except:
@@ -192,7 +186,7 @@ def parse(source, schema):
 # *********************************************************
 #   XML parser.
 # *********************************************************
-            if schema_match is not None:
+            if schema_match is not None and elem.tag != record_tag:
                 attrib_table = None
                 attrib_field = None
                 attrib_value = None
@@ -209,9 +203,10 @@ def parse(source, schema):
                 #       handled by splitting a string if the delimiter
                 #       exists.
                 # *********************************************************
+
                 try:
-                    assert len(elem.attrib.items()) > 0
-                    assert len(schema_match.attrib.items()) > 0
+                    if len(elem.attrib.items()) > 0:
+                        assert len(schema_match.attrib.items()) > 0
                     for key, value in elem.attrib.items():
                         schema_attrib = schema_match.get(key)
                         try:
@@ -233,14 +228,10 @@ def parse(source, schema):
                             # attrib_value = elem.get(key)
 
                         except TypeError, e:
-                            #TODO: What to do here?
+                            print 'Element with tag [' + elem.tag + '] does not have matching schema attributes.'
                             pass
-                        except AssertionError, e:
-                            #TODO: What to do here?
-                            pass
-                            #SUB1
 
-                except:
+                except AssertionError, e:
                     #TODO: What to do here?
                     pass
                 # *********************************************************
@@ -261,11 +252,10 @@ def parse(source, schema):
                     else:
                         attrib_table = find_parent_table(schema, path, table_list)
                         attrib_field = schema_match.text
-                    # print elem
-                    # print elem.text
                     attrib_value = elem.text
 
                 except Exception, e:
+                    print elem.tag
                     #TODO: What to do here?
                     pass
                 # *********************************************************
@@ -277,16 +267,15 @@ def parse(source, schema):
                     assert len(attrib_value.strip()) > 0
                     attrib_table.add({attrib_field: attrib_value})
                 except AssertionError, e:
-                    # print e
                     pass
                 except AttributeError, e:
-                    # print e
                     pass
             elem.clear()
 
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
     return True
+
 
 # class TableClass_Add(unittest.TestCase):
 #     def test(self):
@@ -312,6 +301,8 @@ def parse(source, schema):
 #         self.assertRaises(Exception, Table('test_table', ['test_field'], []))
 #         # TODO: Disconnect the file write for the test.
 #         self.assertTrue(parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml')))
+
+
 # Based on http://stackoverflow.com/questions/9809469/python-sax-to-lxml-for-80gb-xml
 class InfiniteXML (object):
     def __init__(self):
@@ -323,6 +314,6 @@ class InfiniteXML (object):
         else:
             #TODO: What to do here?
             return ''
-# parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
-parse(data_file, etree.parse(schema_file))
+parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
+# parse(data_file, etree.parse(schema_file))
 # parse(InfiniteXML(), data_file, etree.parse(schema_file))
