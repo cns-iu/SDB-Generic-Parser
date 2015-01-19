@@ -43,9 +43,10 @@ data_file           = options.data_file         or 'sample1.xml'
 schema_file         = options.schema_file       or 'schema.xml'
 parent_tag          = options.parent_tag        or 'records'
 output_file_name    = options.output_file       or 'queries.txt'
+# TODO: Use table in record tag
 record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
-master_table        = options.master_table       or 'wos:master'
+master_table        = options.master_table      or 'wos:master'
 delimiter           = ':'
 table_tag           = 'table'
 reserved_keys       = [table_tag]
@@ -122,6 +123,7 @@ def parse(source, schema):
         schema_match = None
         table_list = dict()
         table_list.clear()
+        curr_tag = None
         for event, elem in context:
 # *********************************************************
 #   XML event catchers.
@@ -188,6 +190,7 @@ def parse(source, schema):
                 attrib_field = None
                 attrib_value = None
                 if schema_match.get(table_tag) is not None:
+                    curr_tag = schema_match.get(table_tag)
                     attrib_table = schema_match.get(table_tag)
                     find_table(table_list, attrib_table).store(storage)
 
@@ -210,9 +213,6 @@ def parse(source, schema):
                             if delimiter in schema_attrib:
                                 attrib_split = schema_attrib.split(delimiter)
                                 assert len(attrib_split) == 2
-                                if schema_match.attrib.get('table') is not None:
-                                    # TODO; CHECK NEW?
-                                    find_table(table_list, attrib_split[0]).store(storage)
                                 find_table(table_list, attrib_split[0]).add({attrib_split[1]: value})
                             else:
                                 table = None
@@ -225,7 +225,8 @@ def parse(source, schema):
                             # attrib_value = elem.get(key)
 
                         except TypeError, e:
-                            print 'Element with tag [' + elem.tag + '] does not have matching schema attributes.'
+                            print e
+                            # print 'Element with tag [' + elem.tag + '] does not have matching schema attributes.'
                             pass
 
                 except AssertionError, e:
@@ -243,8 +244,8 @@ def parse(source, schema):
                     assert len(elem.text) > 0
                     assert len(schema_match.text) > 0
                     if delimiter in schema_match.text:
-                        attrib_split = schema_match.text.split(delimiter)
                         attrib_table = find_table(table_list, attrib_split[0])
+                        attrib_split = schema_match.text.split(delimiter)
                         attrib_field = attrib_split[1]
                     else:
                         attrib_table = find_parent_table(schema, path, table_list)
@@ -252,7 +253,6 @@ def parse(source, schema):
                     attrib_value = elem.text
 
                 except Exception, e:
-                    print elem.tag
                     #TODO: What to do here?
                     pass
                 # *********************************************************
@@ -311,6 +311,6 @@ class InfiniteXML (object):
         else:
             #TODO: What to do here?
             return ''
-parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
-# parse(data_file, etree.parse(schema_file))
+# parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
+parse(data_file, etree.parse(schema_file))
 # parse(InfiniteXML(), data_file, etree.parse(schema_file))
