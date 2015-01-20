@@ -104,6 +104,7 @@ def find_table(table_list, tblstr):
     else:
         table_list[tblstr] = Table(tblstr, [], [])
     return table_list[tblstr]
+
 def find_parent_table(schema, path, table_list):
     curr_tag = None
     i = -1
@@ -124,149 +125,95 @@ def verbose_exceptions(ex):
 # def parse(fp, source, schema):
 def parse(source, schema):
     with open(output_file_name, 'w') as output_file:
-        context = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
-        path = []
-        storage = []
-        primary_key = None
-        schema_match = None
-        table_list = dict()
-        table_list.clear()
-        current_table = None
-        for event, elem in context:
-# *********************************************************
-#   XML event catchers.
-# *********************************************************
-            # *********************************************************
-            #   Start event.
-            #   When a new tag opens, try to match the schema to the
-            #   data.
-            # *********************************************************
-            if event == 'start':
-                if elem.tag == id_tag:
-                    primary_key = elem.text
-                path.append(elem)
-                try:
-                    schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]])[len(record_tag):])
-                # TODO: Error occurs when the schema can't be matched. It can be ignored for now, but we could increase performance by fixing it.
-                except SyntaxError, e:
-                    verbose_exceptions(e)
-                if elem.tag == record_tag:
-                    output_file.write('--------------------------------------------\n')
+        with open('something_else.txt', 'w') as something_else:
+            context = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
+            path = []
+            storage = []
+            primary_key = None
+            schema_match = None
+            table_list = dict()
+            open_tables = []
 
-            # *********************************************************
-            #   End event.
-            #   When an open tag closes, build strings from each table
-            #   built through the parsing.
-            # *********************************************************
-            else:
-                assert event == 'end'
-                path.pop()
-                if elem.tag == record_tag:
+            for event, elem in context:
+    # *********************************************************
+    #   XML event catchers.
+    # *********************************************************
+                # *********************************************************
+                #   Start event.
+                #   When a new tag opens, try to match the schema to the
+                #   data.
+                # *********************************************************
+                if event == 'start':
+                    if elem.tag == id_tag:
+                        primary_key = elem.text
+                    path.append(elem)
                     try:
-                        assert primary_key is not None
-                    except AssertionError:
-                        raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
-                        # TODO: Pause the parse here.
-                        return False
-                    to_write = []
-                    for table in table_list:
-                        curr_table = find_table(table_list, table)
-                        while len(storage) > 0:
-                            to_write.append(storage[-1].add({id_tag: primary_key}).sqlify(primary_key, False))
-                            storage.pop()
+                        schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]])[len(record_tag):])
+                        if schema_match:
+                            open_tables.append(schema_match.get(table_tag) or 'None')
+                    # TODO: Error occurs when the schema can't be matched. It can be ignored for now, but we could increase performance by fixing it.
+                    except SyntaxError, e:
+                        verbose_exceptions(e)
+                    if elem.tag == record_tag:
+                        output_file.write('--------------------------------------------\n')
+                # *********************************************************
+                #   End event.
+                #   When an open tag closes, build strings from each table
+                #   built through the parsing.
+                # *********************************************************
+                else:
+                    path.pop()
+                    if len(open_tables) > 0:
+                        something_else.write('\n'.join(open_tables))
+                        open_tables.pop()
+                    if elem.tag == record_tag:
+                        try:
+                            assert primary_key is not None
+                        except AssertionError:
+                            raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
+                            # TODO: Pause the parse here.
+                            return False
+                        to_write = []
+                        for table in table_list:
+                            curr_table = find_table(table_list, table)
+                            while len(storage) > 0:
+                                to_write.append(storage[-1].add({id_tag: primary_key}).sqlify(primary_key, False))
+                                storage.pop()
+                            storage = []
+                            to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
                         storage = []
-                        to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key, False))
-                    storage = []
 
-                    output_file.write('BEGIN\n')
-                    # TODO: Set master_table when a new record is started.
-                    output_file.write('\tIF SELECT EXISTS(SELECT 1 FROM "' + master_table + '" WHERE "' + id_tag + '"="' + primary_key + '")\n')
-                    output_file.write('\t\tTHEN\n')
-                    output_file.write('\t\t\tDELETE FROM "' + master_table + '" WHERE ' + id_tag + '="' + primary_key + '")\n')
-                    output_file.write('END IF\n')
-                    for x in [y.encode('utf-8') for y in to_write if y is not None]:
-                        output_file.write('\t\t' + x)
-                    output_file.write('COMMIT\n')
-                    table_list.clear()
-# *********************************************************
-#   XML parser.
-# *********************************************************
-            if event == 'start':
+                        output_file.write('BEGIN\n')
+                        # TODO: Set master_table when a new record is started.
+                        output_file.write('\tIF SELECT EXISTS(SELECT 1 FROM "' + master_table + '" WHERE "' + id_tag + '"="' + primary_key + '")\n')
+                        output_file.write('\t\tTHEN\n')
+                        output_file.write('\t\t\tDELETE FROM "' + master_table + '" WHERE ' + id_tag + '="' + primary_key + '")\n')
+                        output_file.write('END IF\n')
+                        for x in [y.encode('utf-8') for y in to_write if y is not None]:
+                            output_file.write('\t\t' + x)
+                        output_file.write('COMMIT\n')
+                        table_list.clear()
+    # *********************************************************
+    #   XML parser.
+    # *********************************************************
                 if schema_match is not None and elem.tag != record_tag:
-                    attrib_table = None
-                    attrib_field = None
-                    attrib_value = None
-                    # *********************************************************
-                    #   Tag attribute items. Ex: <tag attribute="attribute value">
-                    #       Match the schema tag to the data tag. Use the
-                    #       value from the schema to map the value from
-                    #       the data. The schema attribute item values
-                    #       usually include the table as well. That is
-                    #       handled by splitting a string if the delimiter
-                    #       exists.
-                    # *********************************************************
-
                     if len(elem.attrib.items()) > 0:
+                        attrib_table = None
+                        attrib_field = None
                         for key, value in elem.attrib.items():
-                            try:
-                                assert schema_match.get(key) is not None
-                            except Exception, e:
-                                print 'asdf'
-                            if attrib_table is not current_table:
-                                find_table(table_list, current_table).store(storage)
-                                current_table = attrib_table
-
-                            if schema_match.get(table_tag) is not None:
-                                attrib_table = schema_match.get(table_tag)
-                                current_table = attrib_table
-                                find_table(table_list, current_table).store(storage)
-                            else:
-                                # print 'eh'
-                                pass
-
                             schema_attrib = schema_match.get(key)
-                            if schema_attrib is not None:
+                            if schema_attrib:
                                 if delimiter in schema_attrib:
                                     attrib_split = schema_attrib.split(delimiter)
                                     attrib_table = attrib_split[0]
-                                    current_table = attrib_table
+                                    attrib_field = attrib_split[1]
                                 else:
-                                    attrib_table = schema_attrib
-                                    current_table = attrib_table
-
-                                attrib_field = key
-                                attrib_value = value
-                                try:
-                                    # print attrib_field, '|', attrib_value, '|', attrib_table, current_table
-                                    assert len(attrib_field.strip()) > 0
-                                    assert len(attrib_value.strip()) > 0
-                                    current_table.add({attrib_field: attrib_value})
-                                    current_table.store(storage)
-                                except (AssertionError, AttributeError), e:
-                                    verbose_exceptions(e)
-                                    pass
-
-
-
-                    # if len(elem.attrib.items()) > 0:
-                    #     assert len(schema_match.attrib.items()) > 0
-                    #     for key, value in elem.attrib.items():
-                    #         schema_attrib = schema_match.get(key)
-                    #         if delimiter in schema_attrib:
-                    #             attrib_split = schema_attrib.split(delimiter)
-                    #             assert len(attrib_split) == 2
-                    #             find_table(table_list, attrib_split[0]).add({attrib_split[1]: value})
-                    #         else:
-                    #             if schema_match.get(table_tag) is not None:
-                    #                 table = find_table(table_list, schema_match.get(table_tag))
-                    #             else:
-                    #                 table = find_parent_table(schema, path, table_list)
-                    #             table.add({schema_match.get(key): elem.get(key)})
-                    #         # TODO: Error occurs when an element is not iterable. This most likely happens when the schema can't be matched
-                    #         # or if the element is a record or top-level tag
-                    #             pass
-
-
+                                    attrib_table = schema_match.get(table_tag)
+                                    if attrib_table is None:
+                                        attrib_table = find_parent_table(schema, path, table_list).table_name
+                                if attrib_table not in open_tables:
+                                    find_table(table_list, attrib_table).store(storage)
+                                find_table(table_list, attrib_table).add({attrib_field: value})
 
                     # *********************************************************
                     #   Tag element text. Ex: <tag>tag element text
@@ -276,41 +223,51 @@ def parse(source, schema):
                     #       table as well. That is handled by splitting a
                     #       string if the delimiter exists.
                     # *********************************************************
+
                     if elem.text:
+                        text_table = None
+                        text_field = None
                         if elem.text.strip():
                             assert len(elem.text) > 0
                             assert len(schema_match.text) > 0
-                            if schema_match.text is not '':
-                                if delimiter in schema_match.text:
-                                    attrib_split = schema_match.text.split(delimiter)
-                                    attrib_table = find_table(table_list, attrib_split[0])
-                                    attrib_field = attrib_split[1]
-                                else:
-                                    try:
-                                        attrib_table = find_parent_table(schema, path, table_list)
-                                        attrib_field = schema_match.text
-                                        print attrib_field
-                                    except Exception, e:
-                                        pass
-                                        # print e
-                                attrib_value = elem.text
+                            if delimiter in schema_match.text:
+                                text_split = schema_match.text.split(delimiter)
+                                text_table = text_split[0]
+                                text_field = text_split[1]
+                            else:
+                                try:
+                                    text_table = filter(None, open_tables)[-1]
+                                except:
+                                    pass
+                                text_field = schema_match.text
+                            find_table(table_list, text_table).add({text_field: elem.text})
+
+                    # if elem.text:
+                    #     if elem.text.strip():
+                    #         assert len(elem.text) > 0
+                    #         assert len(schema_match.text) > 0
+                    #         if schema_match.text is not '':
+                    #             if delimiter in schema_match.text:
+                    #                 attrib_split = schema_match.text.split(delimiter)
+                    #                 attrib_table = find_table(table_list, attrib_split[0])
+                    #                 attrib_field = attrib_split[1]
+                    #             else:
+                    #                 try:
+                    #                     attrib_table = find_parent_table(schema, path, table_list)
+                    #                     attrib_field = schema_match.text
+                    #                 except Exception, e:
+                    #                     pass
+                    #                     # print e
+                    #             attrib_value = elem.text
 
                     # *********************************************************
                     #   Add the fields to the current table for final
                     #   string building.
                     # *********************************************************
-                    try:
-                        assert len(attrib_field.strip()) > 0
-                        assert len(attrib_value.strip()) > 0
-                        # print attrib_field, attrib_value
-                        attrib_table.add({attrib_field: attrib_value})
-                    except (AssertionError, AttributeError), e:
-                        verbose_exceptions(e)
-                        pass
-            elem.clear()
+                elem.clear()
 
-            while elem.getprevious() is not None:
-                del elem.getparent()[0]
+                while elem.getprevious() is not None:
+                    del elem.getparent()[0]
     return True
 
 class TableClass_Add(unittest.TestCase):
@@ -350,6 +307,73 @@ class InfiniteXML (object):
         else:
             #TODO: What to do here?
             return ''
-parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
-# parse(data_file, etree.parse(schema_file))
+# parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
+parse(data_file, etree.parse(schema_file))
 # parse(InfiniteXML(), data_file, etree.parse(schema_file))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#             if schema_match is not None and elem.tag != record_tag:
+#                 attrib_table = None
+#                 attrib_field = None
+#                 attrib_value = None
+#                 if len(elem.attrib.items()) > 0:
+#                     for key, value in elem.attrib.items():
+#                         schema_attrib = schema_match.get(key)
+#                         if schema_attrib:
+#                             if delimiter in schema_attrib:
+#                                 attrib_split = schema_attrib.split(delimiter)
+#                                 assert len(attrib_split) == 2
+#                                 attrib_table = attrib_split[0]
+#                                 attrib_field = attrib_split[1]
+#                                 attrib_value = value
+#                                 current_table = attrib_table
+#                                 # find_table(table_list, attrib_split[0]).add({attrib_split[1]: value})
+#                             else:
+#                                 if schema_match.get(table_tag) is not None:
+#                                     find_table(table_list, attrib_table).store(storage)
+#                                     current_table = attrib_table
+#                                 else:
+#                                     attrib_table = find_parent_table(schema, path, table_list).store(storage).table_name
+#                                     current_table = attrib_table
+#
+#                                 attrib_field = schema_match.get(key)
+#                                 attrib_value = elem.get(key)
+#                             if attrib_table is not current_table:
+#                                 find_table(table_list, attrib_table).store(storage)
+#                                 current_table = attrib_table
+#                             find_table(table_list, attrib_table).add({attrib_field: attrib_value})
+
+
+
+                # if elem.text:
+                #     if elem.text.strip():
+                #         assert len(elem.text) > 0
+                #         assert len(schema_match.text) > 0
+                #         if schema_match.text is not '':
+                #             if delimiter in schema_match.text:
+                #                 attrib_split = schema_match.text.split(delimiter)
+                #                 attrib_table = find_table(table_list, attrib_split[0])
+                #                 attrib_field = attrib_split[1]
+                #             else:
+                #                 try:
+                #                     attrib_table = find_parent_table(schema, path, table_list)
+                #                     attrib_field = schema_match.text
+                #                 except Exception, e:
+                #                     pass
+                #                     # print e
+                #             attrib_value = elem.text
