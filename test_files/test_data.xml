@@ -1,86 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <records>
-    <!--{Test1} -->
-    <!--Standard test. Contains most (if not all) basic cases.-->
     <REC>
-        <UID>test:000000</UID>
-        <summary>
-            <property1 property1_attrib1="attrib1_1_value" />
-            <property2 property2_attrib1="attrib2_1_value" property2_attrib2="attrib2_2_value">Property Two Text Element</property2>
-            <property3>Property Three Text Element</property3>
-            <property4>
-                <property_count property4_attrib1="property_1_value">Property Four Text Element (Count: 1)</property_count>
-                <property_count property4_attrib1="property_2_value">Property Four Text Element (Count: 2)</property_count>
-            </property4>
-        </summary>
-    </REC>
-    <!--
-    Excepted:
-        INSERT INTO "temp_table1" ("UID","property1_attrib1","property2_attrib1","property2_attrib2","property2_text_element","property3_text_element","UID") VALUES ("test:000000","attrib1_1_value","attrib2_1_value","attrib2_2_value","Property Two Text Element","Property Three Text Element","test:000000");
-        INSERT INTO "temp_table1" ("property4_attrib1","property4_text_element","property4_attrib1","property4_text_element","UID") VALUES ("property_1_value","Property Four Text Element (Count: 1)","property_2_value","Property Four Text Element (Count: 2)","test:000000");
-    -->
-
-
-    <!--{Test2} -->
-    <!--Almost the same as {Test1}. The property4 tag is replaced with property4_mod1, which triggers a new insertion with
-    each counted item instead of keeping them in the same statement.-->
-    <REC>
-        <UID>test:000002</UID>
-        <summary>
-            <property1 property1_attrib1="attrib1_1_value" />
-            <property2 property2_attrib1="attrib2_1_value" property2_attrib2="attrib2_2_value">Property Two Text Element</property2>
-            <property3>Property Three Text Element</property3>
-            <property4_mod1>
-                <property_count property4_1_attrib1="property_1_value">Property Four (1) Text Element (Count: 1)</property_count>
-                <property_count property4_1_attrib1="property_2_value">Property Four (1) Text Element (Count: 2)</property_count>
-            </property4_mod1>
-        </summary>
-    </REC>
-    <!--
-    Excepted:
-        INSERT INTO "temp_table1" ("UID","property1_attrib1","property2_attrib1","property2_attrib2","property2_text_element","property3_text_element") VALUES ("test:000001","attrib1_1_value","attrib2_1_value","attrib2_2_value","Property Two Text Element","Property Three Text Element");
-        INSERT INTO "temp_table1" ("UID","property1_attrib1","property2_attrib1","property2_attrib2","property2_text_element","property3_text_element") VALUES ("test:000001","attrib1_1_value","attrib2_1_value","attrib2_2_value","Property Two Text Element","Property Three Text Element");
-        INSERT INTO "temp_table1" ("UID","property5_attrib1","property5_text_element") VALUES ("test:000001","property_1_value","Property Four Text Element (Count: 1)");
-        INSERT INTO "temp_table1" ("UID","property5_attrib1","property5_text_element") VALUES ("test:000001","property_2_value","Property Four Text Element (Count: 2)");    -->
-
-
-    <!--{Test3} -->
-    <!--This tests that a schema text element without a delimiter will attempt to find the nearest parent table tag.-->
-    <REC>
-        <summary>
-            <UID>test:000003</UID>
-            <property4_mod2>
-                <property_count property4_2_attrib1="property_1_value">Property Four (2) Text Element. No delimiter in schema (Count: 1)</property_count>
-                <property_count property4_2_attrib1="property_2_value">Property Four (2) Text Element. No delimiter in schema (Count: 2)</property_count>
-            </property4_mod2>
-        </summary>
-    </REC>
-    <!--
-    Excepted:
-        TODO: What's going to happen, I wonder
-    -->
-
-
-    <!--{Test4} -->
-    <!--This tests that a schema tag attribute without a delimiter will attempt to find the nearest parent table tag.-->
-    <REC>
-        <summary>
-            <UID>test:000004</UID>
-            <property4_mod3>
-                <property_count property4_3_attrib1="property4_1_value_no_delimiter">Property Four (3) Text Element. No delimiter in schema.</property_count>
-            </property4_mod3>
-        </summary>
+        <test_1s>
+            <test_1 attr_1="attributeONE0" attr_2="attributeTWO0" attr_4="attributeTHREE0">Test 1 Text Element (0)</test_1>
+            <test_1 attr_1="attributeONE1" attr_2="attributeTWO1" attr_4="attributeTHREE1">Test 1 Text Element (1)</test_1>
+            <test_1 attr_1="attributeONE2" attr_2="attributeTWO2" attr_4="attributeTHREE2">Test 1 Text Element (2)</test_1>
+            <test_1 attr_1="attributeONE3" attr_2="attributeTWO3" attr_4="attributeTHREE3">Test 1 Text Element (3)</test_1>
+        </test_1s>
+        <UID>AHS:14113</UID>
     </REC>
     <REC>
-        <summary>
-            <UID>test:000004</UID>
-            <property4_mod3>
-                <property_count property4_3_attrib1="property4_1_value_no_delimiter">Property Four (3) Text Element. No delimiter in schema.</property_count>
-            </property4_mod3>
-        </summary>
+        <UID>AHS:12345</UID>
+        <test_2s>
+            <test_2 attr_1="attributeONE0" attr_2="attributeTWO0" attr_3="attributeTHREE0">
+                <child_1>Haha</child_1>
+                <child_2>This</child_2>
+                <child_3>Isn't</child_3>
+                <child_4>Going</child_4>
+                <child_5>To</child_5>
+                <child_6>Work</child_6>
+            </test_2>
+        </test_2s>
     </REC>
-    <!--
-    Excepted:
-        TODO: What's going to happen, I wonder
-    -->
+    <REC>
+        <UID>AHS:12345</UID>
+        <test_2_1s>
+            <test_2_1 attr_1="attributeONE0" attr_2="attributeTWO0" attr_3="attributeTHREE0">
+                <child_1>Haha</child_1>
+                <child_2>This</child_2>
+                <child_3>Isn't</child_3>
+                <child_4>Going</child_4>
+                <child_5>To</child_5>
+                <child_6>Work</child_6>
+            </test_2_1>
+        </test_2_1s>
+    </REC>
 </records>

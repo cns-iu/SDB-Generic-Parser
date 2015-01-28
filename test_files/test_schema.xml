@@ -1,21 +1,28 @@
-<REC table="temp_table1">
-    <UID>temp_table1:UID</UID>
-    <summary table="temp_table_master">
-        <property1 property1_attrib1="temp_table1:property1_attrib1" />
-        <!--TODO: This test fails. Property 2 should use boogaboogaboo instead of temp_table_master-->
-        <property2 table="boogaboogaboo" property2_attrib1="property2_attrib1" property2_attrib2="temp_table1:property2_attrib2">temp_table1:property2_text_element</property2>
-        <property3>temp_table1:property3_text_element</property3>
-        <property4 table="temp_table1">
-            <property_count property4_attrib1="temp_table1:property4_attrib1">temp_table1:property4_text_element</property_count>
-        </property4>
-        <property4_mod1>
-            <property_count table="temp_table1" property4_1_attrib1="temp_table1:property4tart._1_attrib1">temp_table1:property4_1_text_element</property_count>
-        </property4_mod1>
-        <property4_mod2>
-            <property_count property4_2_attrib1="property4_2_attrib1">property4_2_text_element</property_count>
-        </property4_mod2>
-        <property4_mod3>
-            <property_count table="temp_table1" property4_3_attrib1="property4_3_attrib1">property4_3_text_element</property_count>
-        </property4_mod3>
-    </summary>
-</REC>
+<records>
+    <REC table="master_table">
+        <UID>master_table:UID</UID>
+        <test_1s count="temp_table1:test1_count">
+            <test_1 table="temp_table1" attr_1="temp_table1:attr_1" attr_2="temp_table1:attr_2" attr_3="temp_table1:attr_3" attr_4="temp_table1:attr_4">temp_table1:test_1_text</test_1>
+        </test_1s>
+        <test_2s count="temp_table2:test2_count">
+            <test_2 table="temp_table2" attr_1="temp_table2:attr_1_raw" attr_2="temp_table2:attr_2" attr_3="temp_table2:attr_3" attr_4="temp_table2:attr_4">
+                <child_1>temp_table2:child_1_text</child_1>
+                <child_2>temp_table2:child_2_text</child_2>
+                <child_3>temp_table2:child_3_text</child_3>
+                <child_4>temp_table2:child_4_text</child_4>
+                <child_5>temp_table2:child_5_text</child_5>
+                <child_6>temp_table2:child_6_text</child_6>
+            </test_2>
+        </test_2s>
+        <test_2_1s count="temp_table2:test2_count">
+            <test_2_1 table="temp_table2" attr_1="temp_table2:attr_1_raw" attr_2="temp_table2:attr_2" attr_3="temp_table2:attr_3" attr_4="temp_table2:attr_4">
+                <child_1>temp_table2:child_1_text</child_1>
+                <child_2>temp_table2:child_2_text</child_2>
+                <child_3>temp_table2:child_3_text</child_3>
+                <child_4>temp_table2:child_4_text</child_4>
+                <child_5>temp_table2:child_5_text</child_5>
+                <child_6>temp_table2:child_6_text</child_6>
+            </test_2_1>
+        </test_2_1s>
+    </REC>
+</records>
