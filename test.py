@@ -9,6 +9,14 @@ from optparse import OptionParser
 import unittest
 # TODO: The parser fails if there are comments or namespaces in the root. How do I fix this?
 parser = OptionParser()
+
+
+# TODO:
+#     Fix method names
+#     Update README.md
+#     Add a schema reader to determine the order of inserts, sort by this before writing to the file
+
+
 parser.add_option(
         '-d', '--data_file',
         action='store', type='string', dest='data_file',
@@ -130,6 +138,14 @@ def parse(source, schema):
         open_tables = []
         record_table = None
         for event, elem in context:
+# *********************************************************
+#   XML event catchers.
+# *********************************************************
+    # *********************************************************
+    #   Start event.
+    #   When a new tag opens, try to match the schema to the
+    #   data.
+    # *********************************************************
             if event == 'start':
                 path.append(elem)
                 if elem.tag == id_tag:
@@ -138,7 +154,6 @@ def parse(source, schema):
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]]))
                 except SyntaxError, e:
                     verbose_exceptions(e)
-
                 if schema_match is not None:
                     if schema_match.get(table_tag) is not None:
                         open_tables.append(schema_match.get(table_tag))
@@ -146,7 +161,11 @@ def parse(source, schema):
                         open_tables.append(None)
                 else:
                     open_tables.append(None)
-
+    # *********************************************************
+    #   End event.
+    #   When an open tag closes, build strings from each table
+    #   built through the parsing.
+    # *********************************************************
             if event == 'end':
                 path.pop()
                 open_tables.pop()
@@ -167,8 +186,6 @@ def parse(source, schema):
                     storage = []
                     output_file.write('--------------------------------------------\n')
                     output_file.write('BEGIN\n')
-                    print record_table
-
                     output_file.write('\tIF SELECT EXISTS(SELECT 1 FROM "' + record_table + '" WHERE "' + id_tag + '"="' + primary_key + '")\n')
                     output_file.write('\t\tTHEN\n')
                     output_file.write('\t\t\tDELETE FROM "' + record_table + '" WHERE ' + id_tag + '="' + primary_key + '")\n')
@@ -177,7 +194,9 @@ def parse(source, schema):
                         output_file.write('\t\t' + x)
                     output_file.write('COMMIT\n')
                     table_list.clear()
-
+# *********************************************************
+#   XML parser.
+# *********************************************************
             if schema_match is not None:
                 if schema_match.get(table_tag) in open_tables:
                     find_table(table_list, schema_match.get(table_tag)).store(storage)
@@ -195,14 +214,20 @@ def parse(source, schema):
                                 attrib_table = attrib_split[0]
                                 attrib_field = attrib_split[1]
                             else:
-                                # TODO: This is wrong...
                                 attrib_table = key
                                 attrib_field = schema_match.get(table_tag)
                             attrib_value = value
                             if attrib_table is None:
                                 attrib_table = find_parent_table(schema, path, table_list).table_name
                             find_table(table_list, attrib_table).add({attrib_field: attrib_value})
-
+    # *********************************************************
+    #   Tag element text. Ex: <tag>tag element text
+    #       Match the schema text to the data text. Use the
+    #       text from the schema to map the text from
+    #       the data. The schema text is usually include the
+    #       table as well. That is handled by splitting a
+    #       string if the delimiter exists.
+    # *********************************************************
                     if elem.text:
                         text_table = None
                         text_field = None
