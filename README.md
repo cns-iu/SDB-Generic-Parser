@@ -1,7 +1,7 @@
-IAI-Generic-Parser
+SDB-Generic-Parser
 ==================
 ### Description
-This is a generic parser for IAI. This parser will load a schema XML into memory and reference it as a data file is fed into an iterative parser. For each record, the parser will map the data XPath to the schema and build SQL statements accordingly. 
+This is a generic parser for SDB. This parser will load a schema XML into memory and reference it as a data file is fed into an iterative parser. For each record, the parser will map the data XPath to the schema and build SQL statements accordingly. 
 
 ### Requirements
 lxml - Quick XML parser based on the C libraries libxml2 and libxslt
