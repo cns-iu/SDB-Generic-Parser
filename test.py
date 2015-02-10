@@ -10,13 +10,6 @@ import unittest
 # TODO: The parser fails if there are comments or namespaces in the root. How do I fix this?
 parser = OptionParser()
 
-
-# TODO:
-#     Fix method names
-#     Update README.md
-#     Add a schema reader to determine the order of inserts, sort by this before writing to the file
-
-
 parser.add_option(
         '-d', '--data_file',
         action='store', type='string', dest='data_file',
@@ -67,6 +60,7 @@ class Table():
         self.table_name = table_name
         self.fields     = fields
         self.values     = values
+        self.storage    = []
     def add(self, obj):
         for key, val in obj.iteritems():
             if key is not id_tag:
@@ -77,8 +71,8 @@ class Table():
         self.fields = []
         self.values = []
         return self
-    def store(self, storage):
-        storage.append(Table(self.table_name, self.fields, self.values))
+    def store(self):
+        self.storage.append(Table(self.table_name, self.fields, self.values))
         return self.clear()
     def stringify(self, coll):
         str = ''
@@ -125,13 +119,28 @@ def find_parent_table(schema, path, table_list):
 def verbose_exceptions(ex):
     if verbose:
         print ex
+def create_schema_order(source):
+    context = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
+    arr = []
+    for event, elem in context:
+        if event == 'start':
+            if elem.attrib.get(table_tag) is not None:
+                arr.append(elem.attrib.get(table_tag))
+    return arr
 
+def sort_statements(schema_order, table_list):
+    ordered_list = []
+    for x in schema_order:
+        if x in table_list:
+            ordered_list.append(x)
+    return ordered_list
 # def parse(fp, source, schema):
 def parse(source, schema):
+    ordered_schema = create_schema_order(schema_file)
     with open(output_file_name, 'w') as output_file:
         context = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
         path = []
-        storage = []
+        # storage = []
         primary_key = None
         schema_match = None
         table_list = dict()
@@ -175,15 +184,16 @@ def parse(source, schema):
                     raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
                 if elem.tag == record_tag:
                     to_write = []
-                    for table in table_list:
+                    ordered_table_list = sort_statements(ordered_schema, table_list)
+                    for table in ordered_table_list:
                         curr_table = find_table(table_list, table)
-                        storage = storage[::-1]
-                        while len(storage) > 0:
-                            to_write.append(storage[-1].add({id_tag: primary_key}).sqlify(primary_key))
-                            storage.pop()
-                        storage = []
+                        curr_table.storage = curr_table.storage[::-1]
+                        while len(curr_table.storage) > 0:
+                            to_write.append(curr_table.storage[-1].add({id_tag: primary_key}).sqlify(primary_key))
+                            curr_table.storage.pop()
+                        curr_table.storage = []
                         to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key))
-                    storage = []
+                    curr_table.storage = []
                     output_file.write('--------------------------------------------\n')
                     output_file.write('BEGIN\n')
                     output_file.write('\tIF SELECT EXISTS(SELECT 1 FROM "' + record_table + '" WHERE "' + id_tag + '"="' + primary_key + '")\n')
@@ -199,8 +209,16 @@ def parse(source, schema):
 # *********************************************************
             if schema_match is not None:
                 if schema_match.get(table_tag) in open_tables:
-                    find_table(table_list, schema_match.get(table_tag)).store(storage)
-
+                    find_table(table_list, schema_match.get(table_tag)).store()
+    # *********************************************************
+    #   Tag attribute items. Ex: <tag attribute="attribute value">
+    #       Match the schema tag to the data tag. Use the
+    #       value from the schema to map the value from
+    #       the data. The schema attribute item values
+    #       usually include the table as well. That is
+    #       handled by splitting a string if the delimiter
+    #       exists.
+    # *********************************************************
                 if elem.tag != record_tag:
                     for key, value in elem.attrib.items():
                         attrib_table = None
@@ -264,5 +282,29 @@ class InfiniteXML (object):
         else:
             #TODO: What to do here?
             return ''
-# parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml'))
 parse(data_file, etree.parse(schema_file))
+
+class TableClass_Add(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('test_table', [], []).add({'test_field':'test_value'}).sqlify('uid:test', False), 'INSERT INTO "test_table" ("UID","test_field") VALUES ("uid:test","test_value");\n')
+class TableClass_Clear(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('test_table', ['test_field'], ['test_value']).clear().sqlify('uid:test', False), None)
+class TableClass_Store(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('test_table', ['test_field'], ['test_value']).store([]).sqlify('uid:test', False), None)
+        self.assertEqual(len(Table('test_table', ['test_field'], ['test_value']).store([]).storage), 1)
+class TableClass_Stringify(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('', [], []).stringify(['Test', '1', '2']), '"Test","1","2"')
+        self.assertEqual(Table('', [], []).stringify(['', '', '']), '')
+        self.assertTrue(True)
+class TableClass_SQLify(unittest.TestCase):
+    def test(self):
+        self.assertEqual(Table('test_table', [], []).sqlify('uid:test', False), None)
+        self.assertEqual(Table('test_table', ['test_field'], ['test_value']).sqlify('uid:test', False), 'INSERT INTO "test_table" ("UID","test_field") VALUES ("uid:test","test_value");\n')
+        self.assertEqual(Table('test_table', [], []).sqlify('uid:test', True), 'DELETE FROM "test_table" WHERE ("UID" = "uid:test");\n')
+        self.assertRaises(Exception, Table('test_table', [], ['test_value']))
+        self.assertRaises(Exception, Table('test_table', ['test_field'], []))
+        # TODO: Disconnect the file write for the test.
+        self.assertTrue(parse('test_files/test_data.xml', etree.parse('test_files/test_schema.xml')))
