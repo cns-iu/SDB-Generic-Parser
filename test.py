@@ -43,8 +43,8 @@ parser.add_option(
         action='store', type='string', dest='verbose',
         help='boolean to determine whether exceptions should be displayed. Default: True')
 (options, args)     = parser.parse_args()
-data_file           = options.data_file         or 'sample1.xml'
-schema_file         = options.schema_file       or 'schema.xml'
+data_file           = options.data_file         or 'data_files/sample1.xml'
+schema_file         = options.schema_file       or 'data_files/wos_config.xml'
 parent_tag          = options.parent_tag        or 'records'
 output_file_name    = options.output_file       or 'queries.txt'
 # TODO: Use table in record tag
@@ -53,14 +53,24 @@ id_tag              = options.unique_identifier or 'UID'
 verbose             = options.verbose           or False
 delimiter           = ':'
 table_tag           = 'table'
+counter_tag         = 'ctr_id'
 reserved_keys       = [table_tag]
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 class Table():
-    def __init__(self, table_name, fields, values):
+    def __init__(self, table_name, fields, values, counter):
         self.table_name = table_name
         self.fields     = fields
         self.values     = values
         self.storage    = []
+        self.counter    = 0
     def add(self, obj):
         for key, val in obj.iteritems():
             if key is not id_tag:
@@ -70,22 +80,27 @@ class Table():
     def clear(self):
         self.fields = []
         self.values = []
+        self.counter = 0
         return self
+    def increment_counter(self):
+        self.counter += 1
+    def reset_counter(self):
+        self.counter = 0
     def store(self):
-        self.storage.append(Table(self.table_name, self.fields, self.values))
+        self.storage.append(Table(self.table_name, self.fields, self.values, self.counter))
         return self.clear()
-    def stringify(self, coll):
+    def stringify(self, coll, quote_type):
         str = ''
         for item in coll:
             temp_item = item.strip()
             if (temp_item == ""):
                 pass
             else:
-                str += '"' + item.strip() + '",'
+                str += quote_type + item.strip() + quote_type + ','
         return str[:-1]
     def sqlify(self, id):
-        fieldstr = self.stringify(self.fields)
-        valuestr = self.stringify(self.values)
+        fieldstr = self.stringify(self.fields, '"')
+        valuestr = self.stringify(self.values, "'")
         try:
             assert len(self.fields) == len(self.values)
         except:
@@ -95,14 +110,22 @@ class Table():
         try:
             assert id_tag not in self.fields
             assert len(self.fields) > 0
-            return 'INSERT INTO "' + self.table_name + '" (' + '"' + id_tag + '",' + fieldstr + ') VALUES ("' + id + '",' + valuestr + ');\n'
+            if (delimiter in id):
+                curr_id = id.split(delimiter)[1]
+            else:
+                curr_id = id
+            useQuotes = "'"
+            if is_number(curr_id):
+                useQuotes = ""
+                curr_id = str(int(curr_id))
+            return 'INSERT INTO "' + self.table_name + '" (' + '"id",' + fieldstr + ') VALUES (' + (useQuotes + curr_id + useQuotes) + ',' + valuestr + ');\n'
         except Exception, e:
             pass
 def find_table(table_list, tblstr):
     if tblstr in table_list:
         pass
     else:
-        table_list[tblstr] = Table(tblstr, [], [])
+        table_list[tblstr] = Table(tblstr, [], [], 0)
     return table_list[tblstr]
 def find_parent_table(schema, path, table_list):
     curr_tag = None
@@ -127,6 +150,20 @@ def create_schema_order(source):
             if elem.attrib.get(table_tag) is not None:
                 arr.append(elem.attrib.get(table_tag))
     return arr
+def find_counters(schema, path, table_list):
+    i = 0
+    list = []
+    for x in path:
+        xpath_string = ('/'.join([str(x.tag) for x in path[1:i]]))
+        i -= 1
+        try:
+            parent_search = schema.find(xpath_string)
+            if parent_search.get(counter_tag) is not None:
+                print parent_search.get(counter_tag)
+        except Exception, e:
+            print e
+            pass
+
 
 def sort_statements(schema_order, table_list):
     ordered_list = []
@@ -140,7 +177,6 @@ def parse(source, schema):
     with open(output_file_name, 'w') as output_file:
         context = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
         path = []
-        # storage = []
         primary_key = None
         schema_match = None
         table_list = dict()
@@ -183,9 +219,11 @@ def parse(source, schema):
                 except AssertionError:
                     raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
                 if elem.tag == record_tag:
+                    find_counters(schema, path, table_list)
                     to_write = []
                     ordered_table_list = sort_statements(ordered_schema, table_list)
                     for table in ordered_table_list:
+                        # I know how stupid this is. But I'm getting an error trying to add another statement to my loop
                         curr_table = find_table(table_list, table)
                         curr_table.storage = curr_table.storage[::-1]
                         while len(curr_table.storage) > 0:
@@ -195,14 +233,25 @@ def parse(source, schema):
                         to_write.append(curr_table.add({id_tag: primary_key}).sqlify(primary_key))
                     curr_table.storage = []
                     output_file.write('--------------------------------------------\n')
-                    output_file.write('BEGIN\n')
-                    output_file.write('\tIF SELECT EXISTS(SELECT 1 FROM "' + record_table + '" WHERE "' + id_tag + '"="' + primary_key + '")\n')
-                    output_file.write('\t\tTHEN\n')
-                    output_file.write('\t\t\tDELETE FROM "' + record_table + '" WHERE ' + id_tag + '="' + primary_key + '")\n')
-                    output_file.write('END IF\n')
+                    output_file.write('BEGIN;\n')
+                    output_file.write('\tDO\n')
+                    output_file.write('\t$do$\n')
+                    output_file.write('\t\tBEGIN\n')
+                    # TODO: Notify Daniel of updated quotes on primary key and ask if file_number needs quotes
+                    output_file.write('\t\t\tIF EXISTS(SELECT 1 FROM "wos_master" WHERE "wos_uid" = \'' + primary_key + '\' AND \'file_number\' <= 1)\n')
+                    output_file.write('\t\t\t\tTHEN\n')
+                    output_file.write('\t\t\t\t\tDELETE FROM "wos_master" WHERE "wos_uid" = \'' + primary_key + '\';\n')
+                    output_file.write('\t\t\tEND IF;\n')
+                    output_file.write('\t\t\tIF NOT EXISTS(SELECT 1 FROM "wos_master" WHERE "wos_uid" = \'' + primary_key + '\' AND \'file_number\' > 1) \n')
+                    output_file.write('\t\t\t\tTHEN\n')
+
                     for x in [y.encode('utf-8') for y in to_write if y is not None]:
-                        output_file.write('\t\t' + x)
-                    output_file.write('COMMIT\n')
+                        output_file.write('\t\t\t\t\t' + x)
+
+                    output_file.write('\t\t\tEND IF;\n')
+                    output_file.write('\t\tEND \n')
+                    output_file.write('\t$do$;\n')
+                    output_file.write('COMMIT;\n')
                     table_list.clear()
 # *********************************************************
 #   XML parser.
@@ -210,6 +259,7 @@ def parse(source, schema):
             if schema_match is not None:
                 if schema_match.get(table_tag) in open_tables:
                     find_table(table_list, schema_match.get(table_tag)).store()
+
     # *********************************************************
     #   Tag attribute items. Ex: <tag attribute="attribute value">
     #       Match the schema tag to the data tag. Use the
@@ -226,18 +276,22 @@ def parse(source, schema):
                         attrib_value = None
                         if schema_match.get(table_tag) is not None:
                             attrib_table = schema_match.get(table_tag)
-                        if schema_match.get(key) is not None:
-                            if delimiter in schema_match.get(key):
-                                attrib_split = schema_match.get(key).split(delimiter)
-                                attrib_table = attrib_split[0]
-                                attrib_field = attrib_split[1]
-                            else:
-                                attrib_table = key
-                                attrib_field = schema_match.get(table_tag)
-                            attrib_value = value
-                            if attrib_table is None:
-                                attrib_table = find_parent_table(schema, path, table_list).table_name
-                            find_table(table_list, attrib_table).add({attrib_field: attrib_value})
+                            if schema_match.get(counter_tag) is not None:
+                                find_table(table_list, attrib_table).increment_counter()
+                        else:
+                            if schema_match.get(key) is not None:
+                                if delimiter in schema_match.get(key):
+                                    attrib_split = schema_match.get(key).split(delimiter)
+                                    attrib_table = attrib_split[0]
+                                    attrib_field = attrib_split[1]
+                                else:
+                                    attrib_table = key
+                                    attrib_field = schema_match.get(table_tag)
+                                attrib_value = value
+                                if attrib_table is None:
+                                    attrib_table = find_parent_table(schema, path, table_list).table_name
+                                find_table(table_list, attrib_table).add({attrib_field: attrib_value})
+
     # *********************************************************
     #   Tag element text. Ex: <tag>tag element text
     #       Match the schema text to the data text. Use the
