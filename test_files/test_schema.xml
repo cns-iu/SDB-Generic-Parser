@@ -1,0 +1,28 @@
+<records>
+    <REC table="master_table">
+        <UID>master_table:UID</UID>
+        <test_1s count="temp_table1:test1_count">
+            <test_1 table="temp_table1" attr_1="temp_table1:attr_1" attr_2="temp_table1:attr_2" attr_3="temp_table1:attr_3" attr_4="temp_table1:attr_4">temp_table1:test_1_text</test_1>
+        </test_1s>
+        <test_2s count="temp_table2:test2_count">
+            <test_2 table="temp_table2" attr_1="temp_table2:attr_1_raw" attr_2="temp_table2:attr_2" attr_3="temp_table2:attr_3" attr_4="temp_table2:attr_4">
+                <child_1>temp_table2:child_1_text</child_1>
+                <child_2>temp_table2:child_2_text</child_2>
+                <child_3>temp_table2:child_3_text</child_3>
+                <child_4>temp_table2:child_4_text</child_4>
+                <child_5>temp_table2:child_5_text</child_5>
+                <child_6>temp_table2:child_6_text</child_6>
+            </test_2>
+        </test_2s>
+        <test_2_1s count="temp_table2:test2_count">
+            <test_2_1 table="temp_table2" attr_1="temp_table2:attr_1_raw" attr_2="temp_table2:attr_2" attr_3="temp_table2:attr_3" attr_4="temp_table2:attr_4">
+                <child_1>temp_table2:child_1_text</child_1>
+                <child_2>temp_table2:child_2_text</child_2>
+                <child_3>temp_table2:child_3_text</child_3>
+                <child_4>temp_table2:child_4_text</child_4>
+                <child_5>temp_table2:child_5_text</child_5>
+                <child_6>temp_table2:child_6_text</child_6>
+            </test_2_1>
+        </test_2_1s>
+    </REC>
+</records>
