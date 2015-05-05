@@ -1,6 +1,6 @@
 from optparse import OptionParser
 
-def config():
+def config()    :
     parser = OptionParser()
     parser.add_option(
             '-d', '--data_file',
@@ -14,10 +14,6 @@ def config():
             '-m', '--master_table',
             action='store', type='string', dest='master_table',
             help='the name of the master table. When checking for a duplicate record, what table should we delete from to trigger the cascade delete. Default: \'wos:master\'')
-    parser.add_option(
-            '-o', '--output_file',
-            action='store', type='string', dest='output_file',
-            help='the name and relative path of the file to write to. Default: \'queries.txt\'')
     parser.add_option(
             '-p', '--parent_tag',
             action='store', type='string', dest='parent_tag',
@@ -34,4 +30,9 @@ def config():
             '-v', '--verbose',
             action='store', type='string', dest='verbose',
             help='boolean to determine whether exceptions should be displayed. Default: True')
+    parser.add_option(
+            '-a', '--dir_path',
+            action='store', type='string', dest='dir_path',
+            help='absolute directory path for a list of files to parse. Default: \'\'')
+
     return parser
