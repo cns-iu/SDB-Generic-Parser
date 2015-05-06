@@ -5,109 +5,39 @@
 # import sys
 # import re
 # import resource
+# import psycopg2
 from time import gmtime, strftime
 from lxml import etree
+from collections import *
 import OptParser
+from TableClass import Table
+from os import listdir
+from os.path import isfile, join
 import unittest
+
 parser = OptParser.config()
- 
 (options, args)     = parser.parse_args()
 data_file           = options.data_file         or 'data_files/isolated_parse_issue.xml'
-schema_file         = options.schema_file       or 'data_files/wos_config.xml'
+schema_file         = options.schema_file       or 'wos_config.xml'
 parent_tag          = options.parent_tag        or 'records'
-output_file_name    = options.output_file       or 'queries.txt'
 record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
 verbose             = options.verbose           or False
+# dir_path            = options.dir_path          or "C:/Users/simps_000/Desktop/Python/SDB-generic_parser/data_files"
+dir_path            = options.dir_path          or ""
 delimiter           = ':'
 table_tag           = 'table'
 counter_tag         = 'ctr_id'
 reserved_keys       = [table_tag]
- 
-def is_number(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
+f = open('sql_template.txt', 'r')
+sql_template = f.read()
+
 def verbose_exceptions(ex):
     if verbose:
-        print ex
- 
-class Table():
-    def __init__(self, **kwargs):
-        self.name           = kwargs.get('name', '')
-        self.fields         = kwargs.get('fields', [])
-        self.values         = kwargs.get('values', [])
-        self.storage        = []
-        self.counter_name   = kwargs.get('counter_name', '')
-        self.counter_value  = kwargs.get('counter_value', 0)
-        self.parent_counters= kwargs.get('parent_counters', dict())
-        self.xpath          = ''
-    def add(self, obj):
-        for key, val in obj.iteritems():
-            if key is not id_tag:
-                self.fields.append(key)
-                self.values.append(val)
-        return self
-    def clear(self):
-        self.fields = []
-        self.values = []
-        return self
-    def increment_counter_value(self):
-        self.counter_value += 1
-        return self
-    def reset_counter_value(self):
-        self.counter_value = 0
-        return self
-    def store(self):
-        self.storage.append(Table(
-            name=self.name,
-            fields=self.fields,
-            values=self.values,
-            counter_name=self.counter_name,
-            counter_value=self.counter_value
-        ))
-        return self.clear()
-    def set_xpath(self, path):
-        self.xpath = ('/'.join([str(x.tag) for x in path[1:]]))
-    def stringify(self, coll, quote_type):
-        str = ''
-        for item in coll:
-            temp_item = item.strip()
-            if (temp_item == ""):
-                pass
-            else:
-                str += quote_type + item.strip() + quote_type + ','
-        return str[:-1]
-    def sqlify(self, id):
-        fieldstr = self.stringify(self.fields, '"') #+ self.stringify(counter_names, '"')
-        valuestr = self.stringify(self.values, "'") #+ self.stringify(counter_values, "'")
-        try:
-            assert len(self.fields) == len(self.values)
-        except:
-            print self.fields
-            print self.values
-            raise Exception('Length mismatch. Field(' + str(len(self.fields)) + ') !== value(' + str(len(self.values)) + ')')
-        try:
-            assert id_tag not in self.fields
-            assert len(self.fields) > 0
-            if (delimiter in id):
-                curr_id = id.split(delimiter)[1]
-            else:
-                curr_id = id
-            useQuotes = "'"
-            if is_number(curr_id):
-                useQuotes = ""
-                curr_id = str(int(curr_id))
-            return 'INSERT INTO "' + self.name + '" (' + '"id",' + fieldstr + ') VALUES (' + (useQuotes + curr_id + useQuotes) + ',' + valuestr + ');\n'
-        except Exception, e:
-            pass
+        print(ex)
 def get_table(table_list, tblstr):
-    if tblstr in table_list:
-        pass
-    else:
-        table_list[tblstr] = Table(name=tblstr)
+    if tblstr not in table_list:
+        table_list[tblstr] = Table(name=tblstr, id_tag=id_tag, delimiter=delimiter)
     return table_list[tblstr]
 def get_parent_table(schema, path, table_list):
     curr_tag = None
@@ -124,32 +54,86 @@ def get_parent_table(schema, path, table_list):
 def order_schema(source):
     context = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
     arr = []
-    for event, elem in context:
-        if event == 'start':
-            if elem.attrib.get(table_tag) is not None:
-                arr.append(elem.attrib.get(table_tag))
+    [arr.append(elem.attrib.get(table_tag)) for event, elem in context if event == 'start' and elem.attrib.get(table_tag) is not None]
     return arr
 def sort_statements(schema_order, table_list):
     ordered_list = []
-    for x in schema_order:
-        if x in table_list:
-            ordered_list.append(x)
+    [ordered_list.append(x) for x in schema_order if x in table_list]
     return ordered_list
- 
-def parse(source, schema):
+def parse_attr(elem, tbl, schema_match, schema, path, table_list, event):
+# *********************************************************
+#   Tag attribute items. Ex: <tag attribute="attribute value">
+#       Match the schema tag to the data tag. Use the
+#       value from the schema to map the value from
+#       the data. The schema attribute item values
+#       usually include the table as well. That is
+#       handled by splitting a string if the delimiter
+#       exists.
+# *********************************************************
+    for key, value in elem.attrib.items():
+        attrib_table = None
+        attrib_field = None
+        attrib_value = None
+        if schema_match.get(key) is not None:
+            attrib_split = schema_match.get(key).split(delimiter)
+            # TODO: Does this make sense?
+            if delimiter in schema_match.get(key):
+                attrib_split = schema_match.get(key).split(delimiter)
+                attrib_table = attrib_split[0]
+                attrib_field = attrib_split[1]
+            else:
+                attrib_table = key
+                attrib_field = tbl
+            attrib_value = value
+            if attrib_table is None:
+                attrib_table = get_parent_table(schema, path, table_list).name
+            get_table(table_list, attrib_table).add({attrib_field: attrib_value.encode('utf-8')})
+def parse_text(elem, tbl, schema_match, schema, path, table_list):
+# *********************************************************
+#   Tag element text. Ex: <tag>tag element text
+#       Match the schema text to the data text. Use the
+#       text from the schema to map the text from
+#       the data. The schema text is usually include the
+#       table as well. That is handled by splitting a
+#       string if the delimiter exists.
+# *********************************************************
+    if elem.text:
+        text_table = None
+        text_field = None
+        text_value = None
+        if elem.text.strip():
+            if tbl is not None:
+                text_table = tbl
+            if delimiter in schema_match.text:
+                text_split = schema_match.text.split(delimiter)
+                text_table = text_split[0]
+                text_field = text_split[1]
+            else:
+                text_table = get_parent_table(schema, path, table_list)
+                text_field = schema_match.text
+            text_value = elem.text
+            if text_table is None:
+                text_table = get_parent_table(schema, path, table_list).name
+            get_table(table_list, text_table).add({text_field: text_value.encode('utf-8')})
+
+
+def parse_single(source, schema):
+    # cnx = psycopg.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
+    # cursor = cnx.cursor()
+    # cursor.execute('SELECT file_number FROM admin.processing_record WHERE file_name = ' + source + ';')
+    # file_number = cursor.fetchone()
+    file_number = 1
     ordered_schema = order_schema(schema_file)
-    f = open('sql_template.txt', 'r')
-    sql_template = f.read()
-    with open(output_file_name, 'w') as output_file:
+    with open("output/" + source.split("/")[-1].split(".")[0] + "-queries.txt", 'w') as output_file:
         context         = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
         path            = []
         primary_key     = None
         schema_match    = None
-        table_list      = dict()
+        table_list      = OrderedDict()
         open_tables     = []
         record_table    = None
         i = 0
-        print 'Start time:           ' + strftime("%H:%M:%S", gmtime())
+        print('Start time:           ' + strftime("%H:%M:%S", gmtime()))
         for event, elem in context:
 # *********************************************************
 #   XML event catchers.
@@ -161,12 +145,13 @@ def parse(source, schema):
     # *********************************************************
             if event == 'start':
                 path.append(elem)
-                if elem.tag == id_tag: primary_key = elem.text
+                if elem.tag == id_tag:
+                    primary_key = elem.text
                 try:
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]]))
-                except SyntaxError, e:
-                    verbose_exceptions(e)
-                if (schema_match is not None) and (schema_match.get(table_tag) is not None):
+                except (SyntaxError):
+                    verbose_exceptions(SyntaxError)
+                if schema_match is not None and schema_match.get(table_tag) is not None:
                     open_tables.append(schema_match.get(table_tag))
                     get_table(table_list, schema_match.get(table_tag)).set_xpath(path)
                 else:
@@ -176,6 +161,7 @@ def parse(source, schema):
     #   When an open tag closes, build strings from each table
     #   built through the parsing.
     # *********************************************************
+
             if event == 'end':
                 path.pop()
                 open_tables.pop()
@@ -183,129 +169,85 @@ def parse(source, schema):
                     assert primary_key is not None
                 except AssertionError:
                     raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
-# *********************************************************
-#   XML parser.
-# *********************************************************
+
+    # *********************************************************
+    #   Record parser.
+    # *********************************************************
             if schema_match is not None:
-                if schema_match.get(table_tag) in open_tables:
-                    curr_table = get_table(table_list, schema_match.get(table_tag))
+                tbl = schema_match.get(table_tag)
+                ctr = schema_match.get(counter_tag)
+                curr_table = get_table(table_list, tbl)
+                if tbl in open_tables:
                     curr_table.store()
-                    # if curr_table.counter_name is not '':
-                    #     curr_table.increment_counter_value()
-                if schema_match.get(counter_tag) is not None and event == 'start':
-                    counter = schema_match.get(counter_tag)
-                    counter_table = ''
-                    counter_name = ''
-                    if delimiter in counter:
-                        counter_split = counter.split(delimiter)
-                        counter_table = counter_split[0]
-                        counter_name = counter_split[1]
-                    else:
-                        counter_name = counter
-                    curr_table.counter_name = counter_name
-                    curr_table.increment_counter_value()
-                    parent_counters = dict()
-                    for x in open_tables:
-                        if x is not None:
-                            open_table = get_table(table_list, x)
-                            if open_table.counter_name is not '':
-                                parent_counters[open_table.counter_name] = open_table.counter_value
-                    curr_table.parent_counters = parent_counters
-
-    # *********************************************************
-    #   Tag attribute items. Ex: <tag attribute="attribute value">
-    #       Match the schema tag to the data tag. Use the
-    #       value from the schema to map the value from
-    #       the data. The schema attribute item values
-    #       usually include the table as well. That is
-    #       handled by splitting a string if the delimiter
-    #       exists.
-    # *********************************************************
                 if elem.tag != record_tag:
-                    for key, value in elem.attrib.items():
-                        attrib_table = None
-                        attrib_field = None
-                        attrib_value = None
+                    parse_attr(elem, tbl, schema_match, schema, path, table_list, event)
+                    parse_text(elem, tbl, schema_match, schema, path, table_list)
+                    # print([x for x in open_tables if x is not None])
+                    if schema_match.get(counter_tag) is not None and event == "start":
+                        curr_table.counter_name = schema_match.get(counter_tag).split(delimiter)[1]
+                        # curr_table.parent_counters = [x for x in curr_table.parent_counters.items() if x[0] is not '']
+                        parent_counters = OrderedDict()
 
-                        if schema_match.get(table_tag) is not None:
-                            attrib_table = schema_match.get(table_tag)
-                        else:
-                            if schema_match.get(key) is not None:
-                                if delimiter in schema_match.get(key):
-                                    attrib_split = schema_match.get(key).split(delimiter)
-                                    attrib_table = attrib_split[0]
-                                    attrib_field = attrib_split[1]
-                                else:
-                                    attrib_table = key
-                                    attrib_field = schema_match.get(table_tag)
-                                attrib_value = value
-                                if attrib_table is None:
-                                    attrib_table = get_parent_table(schema, path, table_list).name
-                                get_table(table_list, attrib_table).add({attrib_field: attrib_value})
-    # *********************************************************
-    #   Tag element text. Ex: <tag>tag element text
-    #       Match the schema text to the data text. Use the
-    #       text from the schema to map the text from
-    #       the data. The schema text is usually include the
-    #       table as well. That is handled by splitting a
-    #       string if the delimiter exists.
-    # *********************************************************
-                    if elem.text:
-                        text_table = None
-                        text_field = None
-                        text_value = None
-                        if elem.text.strip():
-                            if schema_match.get(table_tag) is not None:
-                                text_table = schema_match.get(table_tag)
-                            if delimiter in schema_match.text:
-                                text_split = schema_match.text.split(delimiter)
-                                text_table = text_split[0]
-                                text_field = text_split[1]
-                            else:
-                                text_table = schema_match.text.strip()
-                                text_field = schema_match.text
-                            text_value = elem.text
-                            if text_table is None:
-                                text_table = get_parent_table(schema, path, table_list).name
-                            get_table(table_list, text_table).add({text_field: text_value})
+                        curr_table.increment_counter_value()
+
+                        for open_table in [x for x in open_tables if x is not None]:
+                            temp_table = get_table(table_list, open_table)
+                            if temp_table.counter_name is not '':
+                                parent_counters[temp_table.counter_name] = temp_table.counter_value
+                        curr_table.parent_counters = parent_counters
                 else:
-                    record_table = schema_match.get(table_tag)
+                    record_table = tbl
+
     # *********************************************************
     #   Write data to file
     # *********************************************************
             if event == 'end' and elem.tag == record_tag:
-                print "Processing record:    " + str(i), "               \r",
+                # print("Processing record:    " + str(i), "               \r",)
                 i += 1
                 to_write = []
                 ordered_table_list = sort_statements(ordered_schema, table_list)
                 for table in ordered_table_list:
                     curr_table = get_table(table_list, table)
+                    curr_table.store()
                     curr_table.storage = curr_table.storage[::-1]
                     while len(curr_table.storage) > 0:
-                        if len(curr_table.storage[-1].fields) > 0:
-                            to_write.append(curr_table.storage[-1].add({id_tag: primary_key}))
+                        temp = curr_table.storage[-1]
+                        for x in temp.parent_counters.items():
+                            temp.add({x[0]:x[1]})
+                        to_write.append(temp.add({id_tag: (primary_key).encode('utf-8')}))
                         curr_table.storage.pop()
                     curr_table.storage = []
-                    if len(curr_table.fields) > 0:
-                        to_write.append(curr_table.add({id_tag: primary_key}))
                 curr_table.storage = []
                 data_str = ""
-                for x in [y for y in to_write if y is not None]:
-                    x.parent_counters[x.counter_name] = x.counter_value
-                    for key, value in x.parent_counters.iteritems():
-                        print key
-                        if value > 0:
-                            x.add({key: str(value)})
-                    data_str += '\t\t\t\t\t' + x.sqlify(primary_key).encode('utf-8')
-                sql_template_copy = sql_template.replace('%pkey%', primary_key).replace('%data%', data_str)
+                # for x in [y for y in to_write if y is not None]:
+                for x in to_write:
+                    if x.sqlify(primary_key) is not None:
+                        data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
+                sql_template_copy = sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%', str(file_number))
                 output_file.write(sql_template_copy)
                 table_list.clear()
             elem.clear()
-
-
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
-    print ''
-    print 'End time:             ' + strftime("%H:%M:%S", gmtime())
+        # print(' ')
+    print('End time:             ' + strftime("%H:%M:%S", gmtime()))
     return True
-parse(data_file, etree.parse(schema_file))
+
+if (dir_path is not ""):
+    print(listdir(dir_path))
+    for f in listdir(dir_path):
+        if isfile(join(dir_path, f)):
+            if f.endswith('.xml'):
+                parse_single(dir_path + "/" + f, etree.parse(schema_file))
+else:
+    parse_single(data_file, etree.parse(schema_file))
+
+# parse_single(data_file, etree.parse(schema_file))
+
+# cnx = psycopg2.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
+# cursor = cnx.cursor()
+# cursor.execute('SELECT file_number FROM admin.processing_record WHERE file_name = ' + data_file + ';')
+# data = cursor.fetch()
+# print cursor.fetchone()
+
+
