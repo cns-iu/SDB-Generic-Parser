@@ -17,13 +17,14 @@ import unittest
 
 parser = OptParser.config()
 (options, args)     = parser.parse_args()
-data_file           = options.data_file         or 'data_files/sample1.xml'
+data_file           = options.data_file         or 'data_files/isolated_parse_issue.xml'
 schema_file         = options.schema_file       or 'wos_config.xml'
 parent_tag          = options.parent_tag        or 'records'
 record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
 verbose             = options.verbose           or False
-dir_path            = options.dir_path          or "C:/Users/simps_000/Desktop/Python/SDB-Generic-Parser-master-unverified/data_files"
+# dir_path            = options.dir_path          or "C:/Users/simps_000/Desktop/Python/SDB-generic_parser/data_files"
+dir_path            = options.dir_path          or ""
 delimiter           = ':'
 table_tag           = 'table'
 counter_tag         = 'ctr_id'
@@ -59,43 +60,7 @@ def sort_statements(schema_order, table_list):
     ordered_list = []
     [ordered_list.append(x) for x in schema_order if x in table_list]
     return ordered_list
-def generate_counters(ctr, event, curr_table, open_tables, table_list):
-# *********************************************************
-#   Counter generation.
-#   Creates or increments a counter based on the schema.
-#   Gets all counters from the open tables and stores
-#   them as parent tables, thereby creating a unique
-#   list of ids to be inserted into the SQL statements.
-# *********************************************************
-    if ctr is not None and event == 'start':
-        counter_split = ctr.split(delimiter)
-        counter_table = counter_split[0]
-        counter_name = counter_split[1]
-
-        if delimiter in ctr:
-            counter_split = ctr.split(delimiter)
-            counter_table = counter_split[0]
-            counter_name = counter_split[1]
-        else:
-            counter_name = ctr
-
-        curr_table.counter_name = counter_name
-        parent_counters = OrderedDict()
-        for x in (x for x in open_tables if x is not None):
-            open_table = get_table(table_list, x)
-            if open_table.counter_name is not '':
-                parent_counters[open_table.counter_name] = open_table.counter_value
-        # print curr_table.storage[-1].parent_counters[curr_table.storage[-1].parent_counters.keys()[-1]]
-        # print curr_table.storage[-1].parent_counters.keys()[-1]
-        # if len(curr_table.storage) > 0:
-        #     if len(curr_table.storage[-1].parent_counters) > 0:
-        #         if curr_table.storage[-1].parent_counters[curr_table.storage[-1].parent_counters.keys()[-1]] == curr_table.parent_counters[curr_table.parent_counters.keys()[-1]]:
-        #             pass
-        #         else:
-        #             curr_table.counter_value = 0
-        curr_table.increment_counter_value()
-        curr_table.parent_counters = parent_counters
-def parse_attr(elem, tbl, schema_match, schema, path, table_list):
+def parse_attr(elem, tbl, schema_match, schema, path, table_list, event):
 # *********************************************************
 #   Tag attribute items. Ex: <tag attribute="attribute value">
 #       Match the schema tag to the data tag. Use the
@@ -122,7 +87,7 @@ def parse_attr(elem, tbl, schema_match, schema, path, table_list):
             attrib_value = value
             if attrib_table is None:
                 attrib_table = get_parent_table(schema, path, table_list).name
-            get_table(table_list, attrib_table).add({attrib_field: (attrib_value).encode('utf-8')})
+            get_table(table_list, attrib_table).add({attrib_field: attrib_value.encode('utf-8')})
 def parse_text(elem, tbl, schema_match, schema, path, table_list):
 # *********************************************************
 #   Tag element text. Ex: <tag>tag element text
@@ -149,7 +114,7 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list):
             text_value = elem.text
             if text_table is None:
                 text_table = get_parent_table(schema, path, table_list).name
-            get_table(table_list, text_table).add({text_field: (text_value).encode('utf-8')})
+            get_table(table_list, text_table).add({text_field: text_value.encode('utf-8')})
 
 
 def parse_single(source, schema):
@@ -167,9 +132,8 @@ def parse_single(source, schema):
         table_list      = OrderedDict()
         open_tables     = []
         record_table    = None
-        temp_parent_counter = None
         i = 0
-        print ('Start time:           ' + strftime("%H:%M:%S", gmtime()))
+        print('Start time:           ' + strftime("%H:%M:%S", gmtime()))
         for event, elem in context:
 # *********************************************************
 #   XML event catchers.
@@ -181,7 +145,8 @@ def parse_single(source, schema):
     # *********************************************************
             if event == 'start':
                 path.append(elem)
-                if elem.tag == id_tag: primary_key = elem.text
+                if elem.tag == id_tag:
+                    primary_key = elem.text
                 try:
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]]))
                 except (SyntaxError):
@@ -196,6 +161,7 @@ def parse_single(source, schema):
     #   When an open tag closes, build strings from each table
     #   built through the parsing.
     # *********************************************************
+
             if event == 'end':
                 path.pop()
                 open_tables.pop()
@@ -209,18 +175,29 @@ def parse_single(source, schema):
     # *********************************************************
             if schema_match is not None:
                 tbl = schema_match.get(table_tag)
-                if tbl in open_tables:
-                    curr_table = get_table(table_list, tbl)
-                    curr_table.store()
                 ctr = schema_match.get(counter_tag)
-                counter_table = ''
-                counter_name = ''
-                generate_counters(ctr, event, curr_table, open_tables, table_list)
+                curr_table = get_table(table_list, tbl)
+                if tbl in open_tables:
+                    curr_table.store()
                 if elem.tag != record_tag:
-                    parse_attr(elem, tbl, schema_match, schema, path, table_list)
+                    parse_attr(elem, tbl, schema_match, schema, path, table_list, event)
                     parse_text(elem, tbl, schema_match, schema, path, table_list)
+                    # print([x for x in open_tables if x is not None])
+                    if schema_match.get(counter_tag) is not None and event == "start":
+                        curr_table.counter_name = schema_match.get(counter_tag).split(delimiter)[1]
+                        # curr_table.parent_counters = [x for x in curr_table.parent_counters.items() if x[0] is not '']
+                        parent_counters = OrderedDict()
+
+                        curr_table.increment_counter_value()
+
+                        for open_table in [x for x in open_tables if x is not None]:
+                            temp_table = get_table(table_list, open_table)
+                            if temp_table.counter_name is not '':
+                                parent_counters[temp_table.counter_name] = temp_table.counter_value
+                        curr_table.parent_counters = parent_counters
                 else:
                     record_table = tbl
+
     # *********************************************************
     #   Write data to file
     # *********************************************************
@@ -234,22 +211,16 @@ def parse_single(source, schema):
                     curr_table.store()
                     curr_table.storage = curr_table.storage[::-1]
                     while len(curr_table.storage) > 0:
-                        to_write.append(curr_table.storage[-1].add({id_tag: (primary_key).encode('utf-8')}))
+                        temp = curr_table.storage[-1]
+                        for x in temp.parent_counters.items():
+                            temp.add({x[0]:x[1]})
+                        to_write.append(temp.add({id_tag: (primary_key).encode('utf-8')}))
                         curr_table.storage.pop()
                     curr_table.storage = []
                 curr_table.storage = []
                 data_str = ""
                 # for x in [y for y in to_write if y is not None]:
                 for x in to_write:
-                # x.parent_counters[x.counter_name] = x.counter_value
-                    if x.counter_name is not None and x.counter_name is not "":
-                        x.add({x.counter_name:x.counter_value})
-                        x.parent_counters.pop(x.counter_name, None)
-                    i = 1
-                    for key, value in x.parent_counters.items():
-                        x.add({key: i})
-                        i += 1
-                    # [x.add({key: value}) for key, value in x.parent_counters.iteritems() if value > 0]
                     if x.sqlify(primary_key) is not None:
                         data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
                 sql_template_copy = sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%', str(file_number))
@@ -262,8 +233,6 @@ def parse_single(source, schema):
     print('End time:             ' + strftime("%H:%M:%S", gmtime()))
     return True
 
-dir_path = ""
-data_file = "C:/Users/simps_000/Desktop/Python/SDB-Generic-Parser-master-unverified/data_files/sample2.xml"
 if (dir_path is not ""):
     print(listdir(dir_path))
     for f in listdir(dir_path):
