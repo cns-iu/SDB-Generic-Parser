@@ -1,5 +1,5 @@
 # Based on http://stackoverflow.com/questions/9809469/python-sax-to-lxml-for-80gb-xml
- 
+   
 #!/usr/bin/env python
 # import os
 # import sys
@@ -14,7 +14,7 @@ from TableClass import Table
 from os import listdir
 from os.path import isfile, join
 import unittest
-
+  
 parser = OptParser.config()
 (options, args)     = parser.parse_args()
 data_file           = options.data_file         or 'data_files/isolated_parse_issue.xml'
@@ -31,7 +31,7 @@ counter_tag         = 'ctr_id'
 reserved_keys       = [table_tag]
 f = open('sql_template.txt', 'r')
 sql_template = f.read()
-
+  
 def verbose_exceptions(ex):
     if verbose:
         print(ex)
@@ -115,8 +115,7 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list):
             if text_table is None:
                 text_table = get_parent_table(schema, path, table_list).name
             get_table(table_list, text_table).add({text_field: text_value.encode('utf-8')})
-
-
+  
 def parse_single(source, schema):
     # cnx = psycopg.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
     # cursor = cnx.cursor()
@@ -131,10 +130,13 @@ def parse_single(source, schema):
         schema_match    = None
         table_list      = OrderedDict()
         open_tables     = []
+        open_counters   = []
+        counter_dict    = OrderedDict()
         record_table    = None
         i = 0
         print('Start time:           ' + strftime("%H:%M:%S", gmtime()))
         for event, elem in context:
+  
 # *********************************************************
 #   XML event catchers.
 # *********************************************************
@@ -156,20 +158,35 @@ def parse_single(source, schema):
                     get_table(table_list, schema_match.get(table_tag)).set_xpath(path)
                 else:
                     open_tables.append(None)
+                if schema_match is not None and schema_match.get(counter_tag) is not None:
+                    if schema_match.get(counter_tag) in counter_dict:
+                        counter_dict[schema_match.get(counter_tag)] += 1
+                    else:
+                        counter_dict[schema_match.get(counter_tag)] = 1
+                    open_counters.append(schema_match.get(counter_tag))
+                else:
+                    open_counters.append(None)
     # *********************************************************
     #   End event.
     #   When an open tag closes, build strings from each table
     #   built through the parsing.
     # *********************************************************
-
             if event == 'end':
                 path.pop()
+                if open_tables[-1] is not None:
+                    temp_table = get_table(table_list, open_tables[-1])
+                    print(temp_table.name, temp_table.child_counters)
+                    if len(temp_table.child_counters) > 0:
+
+                        for x in temp_table.child_counters[:-1]:
+                            counter_dict[x] = 1
                 open_tables.pop()
+                open_counters.pop()
                 try:
                     assert primary_key is not None
                 except AssertionError:
                     raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
-
+ 
     # *********************************************************
     #   Record parser.
     # *********************************************************
@@ -182,22 +199,21 @@ def parse_single(source, schema):
                 if elem.tag != record_tag:
                     parse_attr(elem, tbl, schema_match, schema, path, table_list, event)
                     parse_text(elem, tbl, schema_match, schema, path, table_list)
-                    # print([x for x in open_tables if x is not None])
-                    if schema_match.get(counter_tag) is not None and event == "start":
-                        curr_table.counter_name = schema_match.get(counter_tag).split(delimiter)[1]
-                        # curr_table.parent_counters = [x for x in curr_table.parent_counters.items() if x[0] is not '']
+                    if ctr is not None and event == "start":
+                        curr_table.counter_name = ctr
                         parent_counters = OrderedDict()
-
                         curr_table.increment_counter_value()
-
                         for open_table in [x for x in open_tables if x is not None]:
-                            temp_table = get_table(table_list, open_table)
-                            if temp_table.counter_name is not '':
-                                parent_counters[temp_table.counter_name] = temp_table.counter_value
+                            shrimp_table = get_table(table_list, open_table)
+                            if shrimp_table.counter_name is not '':
+                                shrimp_table = get_table(table_list, open_table)
+                                if ctr not in shrimp_table.child_counters:
+                                    shrimp_table.child_counters.append(ctr)
+                                parent_counters[shrimp_table.counter_name] = shrimp_table.counter_value
                         curr_table.parent_counters = parent_counters
                 else:
                     record_table = tbl
-
+ 
     # *********************************************************
     #   Write data to file
     # *********************************************************
@@ -223,16 +239,14 @@ def parse_single(source, schema):
                 for x in to_write:
                     if x.sqlify(primary_key) is not None:
                         data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
-                sql_template_copy = sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%', str(file_number))
-                output_file.write(sql_template_copy)
+                output_file.write(sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%', str(file_number)))
                 table_list.clear()
             elem.clear()
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
-        # print(' ')
     print('End time:             ' + strftime("%H:%M:%S", gmtime()))
     return True
-
+ 
 if (dir_path is not ""):
     print(listdir(dir_path))
     for f in listdir(dir_path):
@@ -241,13 +255,11 @@ if (dir_path is not ""):
                 parse_single(dir_path + "/" + f, etree.parse(schema_file))
 else:
     parse_single(data_file, etree.parse(schema_file))
-
+ 
 # parse_single(data_file, etree.parse(schema_file))
-
+  
 # cnx = psycopg2.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
 # cursor = cnx.cursor()
 # cursor.execute('SELECT file_number FROM admin.processing_record WHERE file_name = ' + data_file + ';')
 # data = cursor.fetch()
 # print cursor.fetchone()
-
-

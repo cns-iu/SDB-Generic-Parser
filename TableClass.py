@@ -18,6 +18,7 @@ class Table():
         self.counter_name   = kwargs.get('counter_name', '')
         self.counter_value  = kwargs.get('counter_value', 0)
         self.parent_counters= kwargs.get('parent_counters', OrderedDict())
+        self.child_counters= kwargs.get('child_counters', [])
         self.xpath          = ''
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
@@ -59,6 +60,7 @@ class Table():
                     temp_item = quote_type + item.strip().replace("'","''") + quote_type
             strin += temp_item + ','
         return strin[:-1]
+
     def sqlify(self, id):
         fieldstr = self.stringify(self.fields, '"')
         valuestr = self.stringify(self.values, "'")
