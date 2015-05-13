@@ -158,14 +158,6 @@ def parse_single(source, schema):
                     get_table(table_list, schema_match.get(table_tag)).set_xpath(path)
                 else:
                     open_tables.append(None)
-                if schema_match is not None and schema_match.get(counter_tag) is not None:
-                    if schema_match.get(counter_tag) in counter_dict:
-                        counter_dict[schema_match.get(counter_tag)] += 1
-                    else:
-                        counter_dict[schema_match.get(counter_tag)] = 1
-                    open_counters.append(schema_match.get(counter_tag))
-                else:
-                    open_counters.append(None)
     # *********************************************************
     #   End event.
     #   When an open tag closes, build strings from each table
@@ -173,15 +165,7 @@ def parse_single(source, schema):
     # *********************************************************
             if event == 'end':
                 path.pop()
-                if open_tables[-1] is not None:
-                    temp_table = get_table(table_list, open_tables[-1])
-                    print(temp_table.name, temp_table.child_counters)
-                    if len(temp_table.child_counters) > 0:
-
-                        for x in temp_table.child_counters[:-1]:
-                            counter_dict[x] = 1
                 open_tables.pop()
-                open_counters.pop()
                 try:
                     assert primary_key is not None
                 except AssertionError:
@@ -192,28 +176,34 @@ def parse_single(source, schema):
     # *********************************************************
             if schema_match is not None:
                 tbl = schema_match.get(table_tag)
-                ctr = schema_match.get(counter_tag)
                 curr_table = get_table(table_list, tbl)
                 if tbl in open_tables:
                     curr_table.store()
                 if elem.tag != record_tag:
                     parse_attr(elem, tbl, schema_match, schema, path, table_list, event)
                     parse_text(elem, tbl, schema_match, schema, path, table_list)
-                    if ctr is not None and event == "start":
-                        curr_table.counter_name = ctr
-                        parent_counters = OrderedDict()
-                        curr_table.increment_counter_value()
-                        for open_table in [x for x in open_tables if x is not None]:
-                            shrimp_table = get_table(table_list, open_table)
-                            if shrimp_table.counter_name is not '':
-                                shrimp_table = get_table(table_list, open_table)
-                                if ctr not in shrimp_table.child_counters:
-                                    shrimp_table.child_counters.append(ctr)
-                                parent_counters[shrimp_table.counter_name] = shrimp_table.counter_value
-                        curr_table.parent_counters = parent_counters
                 else:
                     record_table = tbl
- 
+
+    # *********************************************************
+    #   counter whatever
+    # *********************************************************
+                ctr = schema_match.get(counter_tag)
+                if event == "start":
+                    if ctr is not None:
+                        open_counters.append(ctr)
+                        if ctr in counter_dict:
+                            counter_dict[ctr] += 1
+                        else:
+                            counter_dict[ctr] = 1
+                    else:
+                        open_counters.append(None)
+                if event == "end":
+                    try:
+                        open_counters.pop()
+                    except:
+                        pass
+
     # *********************************************************
     #   Write data to file
     # *********************************************************
@@ -228,8 +218,6 @@ def parse_single(source, schema):
                     curr_table.storage = curr_table.storage[::-1]
                     while len(curr_table.storage) > 0:
                         temp = curr_table.storage[-1]
-                        for x in temp.parent_counters.items():
-                            temp.add({x[0]:x[1]})
                         to_write.append(temp.add({id_tag: (primary_key).encode('utf-8')}))
                         curr_table.storage.pop()
                     curr_table.storage = []

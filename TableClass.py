@@ -15,11 +15,10 @@ class Table():
         self.fields         = kwargs.get('fields', [])
         self.values         = kwargs.get('values', [])
         self.storage        = []
-        self.counter_name   = kwargs.get('counter_name', '')
-        self.counter_value  = kwargs.get('counter_value', 0)
-        self.parent_counters= kwargs.get('parent_counters', OrderedDict())
-        self.child_counters= kwargs.get('child_counters', [])
         self.xpath          = ''
+        self.counter_name   = ''
+        self.counter_value  = 0
+        self.child_counters = []
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
             self.fields.append(key)
@@ -40,11 +39,12 @@ class Table():
             name=self.name,
             fields=self.fields,
             values=self.values,
+            id_tag=self.id_tag,
+            delimiter=self.delimiter,
             counter_name=self.counter_name,
             counter_value=self.counter_value,
-            parent_counters=self.parent_counters,
-            id_tag=self.id_tag,
-            delimiter=self.delimiter
+            child_counters=self.child_counters
+
         ))
         return self.clear()
     def set_xpath(self, path):
