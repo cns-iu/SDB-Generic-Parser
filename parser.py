@@ -205,14 +205,17 @@ def parse_single(source, schema):
                 else:
                     record_table = tbl
 
+
+                # if the element has a counter and is being opened
+
+
+
+
                 if ctr is not None:
                     ctr = ctr.split(delimiter)[1]
                     if event == "start":
 
                         curr_table.counter_name = ctr
-
-                        for y in list(curr_table.child_counters)[:-1][:0]:
-                            curr_table.child_counters[y] = 1
 
                         for x in open_tables:
                             temp_table = get_table(table_list, x)
@@ -223,24 +226,18 @@ def parse_single(source, schema):
                                 non_null_tables_with_counters = [y for y in
                                                                     [x for x in open_tables if x is not None]
                                                                  if get_table(table_list, y).counter_name is not '']
-                                print '---'
-                                print non_null_tables_with_counters, curr_table.name, len(non_null_tables_with_counters)
+                                # print('---')
+                                # print(non_null_tables_with_counters, curr_table.name, len(non_null_tables_with_counters))
                                 shrimp = non_null_tables_with_counters[0]
                                 if len(non_null_tables_with_counters) > 1:
                                     shrimp = non_null_tables_with_counters[-2]
                                 shrimp_table = get_table(table_list, shrimp)
                                 for something in shrimp_table.child_counters.items():
                                     curr_table.add({something[0]:something[1]})
-
-                                # if len(list(test2)) > 0:
-                                #     for asdf in get_table(table_list, test2[0]).child_counters.items():
-                                #         curr_table.add({asdf[0]: asdf[1]})
-
-                                    # if len(curr_table.child_counters.items()) > 0:
-                                    #     curr_table.add({curr_table.child_counters.items()[0][0]: curr_table.child_counters.items()[0][1]})
-
-                    if event == "end":
-                        pass
+                            print(curr_table.child_counters)
+                            for y in list(curr_table.child_counters)[:-1][0:]:
+                                print('whuuuuu')
+                                curr_table.child_counters[y] = 1
 
                         # *********************************************************
                         #   Write data to file
