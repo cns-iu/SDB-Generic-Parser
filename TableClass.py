@@ -15,14 +15,17 @@ class Table():
         self.fields         = kwargs.get('fields', [])
         self.values         = kwargs.get('values', [])
         self.storage        = []
+        self.counter_name   = kwargs.get('counter_name', '')
+        self.counter_value  = kwargs.get('counter_value', 0)
+        self.child_counters = kwargs.get('child_counters', OrderedDict())
         self.xpath          = ''
-        self.counter_name   = ''
-        self.counter_value  = 0
-        self.child_counters = []
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
-            self.fields.append(key)
-            self.values.append(val)
+            if key in self.fields:
+                self.values[self.fields.index(key)] = val
+            else:
+                self.fields.append(key)
+                self.values.append(val)
         return self
     def clear(self):
         self.fields = []
@@ -39,12 +42,11 @@ class Table():
             name=self.name,
             fields=self.fields,
             values=self.values,
-            id_tag=self.id_tag,
-            delimiter=self.delimiter,
             counter_name=self.counter_name,
             counter_value=self.counter_value,
-            child_counters=self.child_counters
-
+            child_counters=self.child_counters,
+            id_tag=self.id_tag,
+            delimiter=self.delimiter
         ))
         return self.clear()
     def set_xpath(self, path):
@@ -60,7 +62,6 @@ class Table():
                     temp_item = quote_type + item.strip().replace("'","''") + quote_type
             strin += temp_item + ','
         return strin[:-1]
-
     def sqlify(self, id):
         fieldstr = self.stringify(self.fields, '"')
         valuestr = self.stringify(self.values, "'")

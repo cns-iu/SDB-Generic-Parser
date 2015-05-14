@@ -1,5 +1,5 @@
 # Based on http://stackoverflow.com/questions/9809469/python-sax-to-lxml-for-80gb-xml
-   
+  
 #!/usr/bin/env python
 # import os
 # import sys
@@ -14,7 +14,7 @@ from TableClass import Table
 from os import listdir
 from os.path import isfile, join
 import unittest
-  
+ 
 parser = OptParser.config()
 (options, args)     = parser.parse_args()
 data_file           = options.data_file         or 'data_files/isolated_parse_issue.xml'
@@ -31,7 +31,7 @@ counter_tag         = 'ctr_id'
 reserved_keys       = [table_tag]
 f = open('sql_template.txt', 'r')
 sql_template = f.read()
-  
+ 
 def verbose_exceptions(ex):
     if verbose:
         print(ex)
@@ -115,7 +115,7 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list):
             if text_table is None:
                 text_table = get_parent_table(schema, path, table_list).name
             get_table(table_list, text_table).add({text_field: text_value.encode('utf-8')})
-  
+ 
 def parse_single(source, schema):
     # cnx = psycopg.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
     # cursor = cnx.cursor()
@@ -136,7 +136,7 @@ def parse_single(source, schema):
         i = 0
         print('Start time:           ' + strftime("%H:%M:%S", gmtime()))
         for event, elem in context:
-  
+
 # *********************************************************
 #   XML event catchers.
 # *********************************************************
@@ -170,13 +170,15 @@ def parse_single(source, schema):
                     assert primary_key is not None
                 except AssertionError:
                     raise Exception('Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
- 
+
+
+            if schema_match is not None:
+                tbl = schema_match.get(table_tag)
+                ctr = schema_match.get(counter_tag)
+                curr_table = get_table(table_list, tbl)
     # *********************************************************
     #   Record parser.
     # *********************************************************
-            if schema_match is not None:
-                tbl = schema_match.get(table_tag)
-                curr_table = get_table(table_list, tbl)
                 if tbl in open_tables:
                     curr_table.store()
                 if elem.tag != record_tag:
@@ -186,23 +188,88 @@ def parse_single(source, schema):
                     record_table = tbl
 
     # *********************************************************
-    #   counter whatever
+    #   Counter parser.
     # *********************************************************
-                ctr = schema_match.get(counter_tag)
-                if event == "start":
-                    if ctr is not None:
-                        open_counters.append(ctr)
-                        if ctr in counter_dict:
-                            counter_dict[ctr] += 1
-                        else:
+        #       if an element with a counter closes, get the open tables
+        #             ex: [master, addr, name, email]
+        #       then filter all table out that don't have a counter tag
+        #             ex: [addr, name, email]
+        #       for each of those tables, get their counter and add it to the table of the element being close
+        #             ex: email: addr, name, email
+        #       get all of the child counters of that element and set their value to 1 in the counter_dict. Exlude the current counter
+
+        #       if an element with a counter opens, check to see if that counter is in counter_dict
+        #           ex: email in ({name, addr, email})
+        #       if so, add to it's value,otherwise, add it to the dictionary with a value of 1
+                if ctr is not None:
+                    ctr = ctr.split(delimiter)[1]
+                    if event == "end":
+                        for x in curr_table.child_counters[:-1]:
+                            if x is not ctr:
+                                counter_dict[x] = 1
+                        for y in reversed(open_tables):
+                            shrimp_table = get_table(table_list, y)
+                            if shrimp_table.counter_name is not '':
+                                if shrimp_table.counter_name not in curr_table.fields:
+                                    curr_table.add({shrimp_table.counter_name:counter_dict[shrimp_table.counter_name]})
+                            else:
+                                if ctr not in curr_table.fields:
+                                    curr_table.add({ctr:counter_dict[ctr]})
+                    if event == "start":
+                        if ctr not in counter_dict:
                             counter_dict[ctr] = 1
-                    else:
-                        open_counters.append(None)
-                if event == "end":
-                    try:
-                        open_counters.pop()
-                    except:
-                        pass
+                        else:
+                            counter_dict[ctr] += 1
+                        for x in open_tables:
+                            temp_table = get_table(table_list, x)
+                            if temp_table.counter_name is not '':
+                                temp_table.child_counters.append(ctr)
+                            # print temp_table.child_counters
+                        curr_table.counter_name = ctr
+
+
+
+
+
+
+
+
+
+
+                # if ctr is not None:
+                #     if event == "end":
+                #         for x in curr_table.child_counters:
+                #             if x in counter_dict:
+                #                 counter_dict[x] = 1
+                #         for x in open_tables:
+                #             shrimp_table = get_table(table_list, x)
+                #             if shrimp_table.counter_name is not '':
+                #                 curr_table.add({shrimp_table.counter_name:shrimp_table.counter_value})
+                #         print counter_dict
+                #     if event == "start":
+                #         for x in open_tables[:-1]:
+                #             pass
+
+
+                        # # for x in open_tables:
+                        # #     if x is not None:
+                        # #         open_table = get_table(table_list, x)
+                        # #         if ctr not in open_table.child_counters:
+                        # #             for y in open_tables:
+                        # #                 temp_table = get_table(table_list, y)
+                        # #                 if temp_table.counter_name is not '':
+                        # #                     temp_table.child_counters.append(ctr)
+                        # curr_table.counter_name = ctr
+                        # if ctr in counter_dict:
+                        #     counter_dict[ctr] += 1
+                        # else:
+                        #     counter_dict[ctr] = 1
+
+
+
+
+
+
 
     # *********************************************************
     #   Write data to file
@@ -218,6 +285,8 @@ def parse_single(source, schema):
                     curr_table.storage = curr_table.storage[::-1]
                     while len(curr_table.storage) > 0:
                         temp = curr_table.storage[-1]
+                        # for x in temp.parent_counters.items():
+                        #     temp.add({x[0]:x[1]})
                         to_write.append(temp.add({id_tag: (primary_key).encode('utf-8')}))
                         curr_table.storage.pop()
                     curr_table.storage = []
@@ -234,7 +303,7 @@ def parse_single(source, schema):
                 del elem.getparent()[0]
     print('End time:             ' + strftime("%H:%M:%S", gmtime()))
     return True
- 
+
 if (dir_path is not ""):
     print(listdir(dir_path))
     for f in listdir(dir_path):
@@ -243,9 +312,9 @@ if (dir_path is not ""):
                 parse_single(dir_path + "/" + f, etree.parse(schema_file))
 else:
     parse_single(data_file, etree.parse(schema_file))
- 
+
 # parse_single(data_file, etree.parse(schema_file))
-  
+ 
 # cnx = psycopg2.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
 # cursor = cnx.cursor()
 # cursor.execute('SELECT file_number FROM admin.processing_record WHERE file_name = ' + data_file + ';')
