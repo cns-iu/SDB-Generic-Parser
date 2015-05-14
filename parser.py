@@ -210,11 +210,11 @@ def parse_single(source, schema):
                         for y in reversed(open_tables):
                             shrimp_table = get_table(table_list, y)
                             if shrimp_table.counter_name is not '':
-                                if shrimp_table.counter_name not in curr_table.fields:
-                                    curr_table.add({shrimp_table.counter_name:counter_dict[shrimp_table.counter_name]})
-                            else:
-                                if ctr not in curr_table.fields:
-                                    curr_table.add({ctr:counter_dict[ctr]})
+                                curr_table.add({shrimp_table.counter_name: counter_dict[shrimp_table.counter_name]})
+                        if ctr not in curr_table.fields:
+                            curr_table.add({ctr: counter_dict[ctr]})
+                        print counter_dict
+
                     if event == "start":
                         if ctr not in counter_dict:
                             counter_dict[ctr] = 1
@@ -224,7 +224,6 @@ def parse_single(source, schema):
                             temp_table = get_table(table_list, x)
                             if temp_table.counter_name is not '':
                                 temp_table.child_counters.append(ctr)
-                            # print temp_table.child_counters
                         curr_table.counter_name = ctr
 
 
