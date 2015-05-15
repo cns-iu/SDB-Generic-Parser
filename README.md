@@ -10,7 +10,7 @@ OptionParser - Flexible library for parsing command-line options
 
 
 ### Usage
-Run test.py (TODO: change that name) from the command line.
+Run parser.py from the command line.
 
 Soon we will support command line arguments to prevent the need to modify a script. The required arguments are:
 
@@ -22,7 +22,7 @@ Soon we will support command line arguments to prevent the need to modify a scri
 | -p | --parenttag | root tag of the data file |
 | -r | --recordtag | identifying tag for the records |
 | -i | --idtag | primary identifier across tables |
-  
+| -a | --dir_path | path of data files. if set, the parser will run for each xml found |
   
 ### Credits
 TODO: Put something here
