@@ -18,6 +18,7 @@ class Table():
         self.counter_name   = kwargs.get('counter_name', '')
         self.counter_value  = kwargs.get('counter_value', 0)
         self.child_counters = kwargs.get('child_counters', OrderedDict())
+        self.parent_counters= kwargs.get('parent_counters', OrderedDict())
         self.xpath          = ''
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
@@ -44,6 +45,7 @@ class Table():
             values=self.values,
             counter_name=self.counter_name,
             counter_value=self.counter_value,
+            parent_counters=self.parent_counters,
             child_counters=self.child_counters,
             id_tag=self.id_tag,
             delimiter=self.delimiter

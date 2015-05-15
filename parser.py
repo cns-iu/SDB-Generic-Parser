@@ -17,14 +17,13 @@ import unittest
 
 parser = OptParser.config()
 (options, args) = parser.parse_args()
-data_file = options.data_file or 'data_files/isolated_parse_issue.xml'
+data_file = options.data_file or 'data_files/sample2.xml'
 schema_file = options.schema_file or 'wos_config.xml'
 parent_tag = options.parent_tag or 'records'
 record_tag = options.record_tag or 'REC'
 id_tag = options.unique_identifier or 'UID'
 verbose = options.verbose or False
-# dir_path            = options.dir_path          or "C:/Users/simps_000/Desktop/Python/SDB-generic_parser/data_files"
-dir_path = options.dir_path or ""
+dir_path            = options.dir_path          or "C:/Users/adhsimps/Documents/Workspaces/Python/SDB-generic_parser/data_files"
 delimiter = ':'
 table_tag = 'table'
 counter_tag = 'ctr_id'
@@ -205,43 +204,92 @@ def parse_single(source, schema):
                 else:
                     record_table = tbl
 
-
-                # if the element has a counter and is being opened
-
-
-
-
                 if ctr is not None:
                     ctr = ctr.split(delimiter)[1]
+                    curr_table.counter_name = ctr
                     if event == "start":
+                        open_tables_no_null_with_counters = [y for y in [x for x in open_tables if x is not None] if get_table(table_list, y).counter_name is not '']
+                        # print open_tables_no_null_with_counters[:-1], curr_table.name
+                        for otnnwc in open_tables_no_null_with_counters[:-1]:
+                            open_table_not_null_with_counter = get_table(table_list, otnnwc)
+                            curr_table.parent_counters[open_table_not_null_with_counter.counter_name] = open_table_not_null_with_counter.counter_value
+                            # curr_table.add({open_table_not_null_with_counter.counter_name: open_table_not_null_with_counter.counter_value})
+                        if len(curr_table.parent_counters) > 0:
+                            # print curr_table.parent_counters.items()[-1]
+                            # print curr_table.parent_counters.items()[-1][0]
+                            # print 'One: ', get_table(table_list, open_tables_no_null_with_counters[-2]).counter_name, 'Two: ', get_table(table_list, curr_table.parent_counters.items()[-1]).counter_name
+                            print(get_table(table_list, list(curr_table.parent_counters.keys())[-1][0]).counter_value)
+                            if get_table(table_list, open_tables_no_null_with_counters[-2]).counter_value == get_table(table_list, list(curr_table.parent_counters.keys())[-1][0]).counter_value + 1:
+                                curr_table.counter_value += 1
+                            else:
+                                curr_table.counter_value = 1
+                        else:
+                            curr_table.counter_value += 1
+                    # if event == "end":
+                        for write in curr_table.parent_counters.items():
+                            curr_table.add({write[0]:write[1]})
+                        curr_table.add({curr_table.counter_name: curr_table.counter_value})
+                        # for z in open_tables_no_null_with_counters[:-1]:
+                        #     temp_table = get_table(table_list, z)
+                        #     # curr_table.parent_counters[temp_table.counter_name] = temp_table.counter_value
+                        # something = list(reversed(open_tables_no_null_with_counters))
+                        # if len(something) == 0:
+                        #     curr_table.counter_value += 1
+                        # else:
+                        #     if len(curr_table.parent_counters) > 0:
+                        #         # print curr_table.parent_counters.items()[-1][1], get_table(table_list, something[-1]).counter_value
+                        #         if get_table(table_list, something[-1]).counter_value == curr_table.parent_counters.items()[-1][1]:
+                        #             curr_table.counter_value += 1
+                        #         else:
+                        #             curr_table.counter_value = 1
+                        #     else:
+                        #         curr_table.counter_value += 1
+                        # for a in curr_table.parent_counters:
+                        #     curr_table.add({a: curr_table.parent_counters[a]})
+                        # curr_table.add({curr_table.counter_name:curr_table.counter_value})
 
-                        curr_table.counter_name = ctr
 
-                        for x in open_tables:
-                            temp_table = get_table(table_list, x)
-                            if temp_table.counter_name is not '':
-                                if ctr not in temp_table.child_counters:
-                                    temp_table.child_counters[ctr] = 0
-                                temp_table.child_counters[ctr] += 1
-                                non_null_tables_with_counters = [y for y in
-                                                                    [x for x in open_tables if x is not None]
-                                                                 if get_table(table_list, y).counter_name is not '']
-                                # print('---')
-                                # print(non_null_tables_with_counters, curr_table.name, len(non_null_tables_with_counters))
-                                shrimp = non_null_tables_with_counters[0]
-                                if len(non_null_tables_with_counters) > 1:
-                                    shrimp = non_null_tables_with_counters[-2]
-                                shrimp_table = get_table(table_list, shrimp)
-                                for something in shrimp_table.child_counters.items():
-                                    curr_table.add({something[0]:something[1]})
-                            print(curr_table.child_counters)
-                            for y in list(curr_table.child_counters)[:-1][0:]:
-                                print('whuuuuu')
-                                curr_table.child_counters[y] = 1
+                    # if event == "end":
+                        # print a, curr_table.parent_counters[a]
+                            # print list(reversed(open_tables_no_null_with_counters))
+                        # print open_tables_no_null_with_counters, curr_table.counter_name
 
-                        # *********************************************************
-                        #   Write data to file
-                        # *********************************************************
+                    #     curr_table.counter_name = ctr
+                    #
+                    #     for y in list(curr_table.child_counters)[:-1][:0]:
+                    #         curr_table.child_counters[y] = 1
+                    #
+                    #     for x in open_tables:
+                    #         temp_table = get_table(table_list, x)
+                    #         if temp_table.counter_name is not '':
+                    #             if ctr not in temp_table.child_counters:
+                    #                 temp_table.child_counters[ctr] = 0
+                    #             temp_table.child_counters[ctr] += 1
+                    #             non_null_tables_with_counters = [y for y in
+                    #                                                 [x for x in open_tables if x is not None]
+                    #                                              if get_table(table_list, y).counter_name is not '']
+                    #             print '---'
+                    #             print non_null_tables_with_counters, curr_table.name, len(non_null_tables_with_counters)
+                    #             shrimp = non_null_tables_with_counters[0]
+                    #             if len(non_null_tables_with_counters) > 1:
+                    #                 shrimp = non_null_tables_with_counters[-2]
+                    #             shrimp_table = get_table(table_list, shrimp)
+                    #             for something in shrimp_table.child_counters.items():
+                    #                 curr_table.add({something[0]:something[1]})
+                    #
+                    #             # if len(list(test2)) > 0:
+                    #             #     for asdf in get_table(table_list, test2[0]).child_counters.items():
+                    #             #         curr_table.add({asdf[0]: asdf[1]})
+                    #
+                    #                 # if len(curr_table.child_counters.items()) > 0:
+                    #                 #     curr_table.add({curr_table.child_counters.items()[0][0]: curr_table.child_counters.items()[0][1]})
+                    #
+                    # if event == "end":
+                    #     pass
+                    #
+                    #     # *********************************************************
+                    #     #   Write data to file
+                    #     # *********************************************************
             if event == 'end' and elem.tag == record_tag:
                 # print("Processing record:    " + str(i), "               \r",)
                 i += 1
