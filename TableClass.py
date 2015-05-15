@@ -22,6 +22,8 @@ class Table():
         self.xpath          = ''
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
+            if type(val) is bytes:
+                val = str(val, 'utf-8')
             if key in self.fields:
                 self.values[self.fields.index(key)] = val
             else:
@@ -61,9 +63,10 @@ class Table():
                 if is_number(item):
                     temp_item = str(item)
                 else:
-                    temp_item = quote_type + item.strip().replace("'","''") + quote_type
+                    temp_item = quote_type + str(item).strip().replace("'","''") + quote_type
             strin += temp_item + ','
-        return strin[:-1]
+        strin = strin[:-1]
+        return str(strin)
     def sqlify(self, id):
         fieldstr = self.stringify(self.fields, '"')
         valuestr = self.stringify(self.values, "'")
@@ -84,6 +87,7 @@ class Table():
             #     curr_id = str(int(curr_id))
             # if is_number(curr_id):
             #     useQuotes = ""
+
             return 'INSERT INTO "' + self.name + '" (' + '"id",' + fieldstr + ') VALUES (' + curr_id  + ',' + valuestr + ');\n'
         except (Exception):
             pass

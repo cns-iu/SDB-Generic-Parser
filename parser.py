@@ -17,13 +17,14 @@ import unittest
 
 parser = OptParser.config()
 (options, args) = parser.parse_args()
-data_file = options.data_file or 'data_files/sample2.xml'
+data_file = options.data_file or 'data_files/isolated_parse_issue.xml'
 schema_file = options.schema_file or 'wos_config.xml'
 parent_tag = options.parent_tag or 'records'
 record_tag = options.record_tag or 'REC'
 id_tag = options.unique_identifier or 'UID'
 verbose = options.verbose or False
 dir_path            = options.dir_path          or "C:/Users/adhsimps/Documents/Workspaces/Python/SDB-generic_parser/data_files"
+dir_path = "data_files"
 delimiter = ':'
 table_tag = 'table'
 counter_tag = 'ctr_id'
@@ -85,7 +86,9 @@ def parse_attr(elem, tbl, schema_match, schema, path, table_list, event):
         attrib_table = None
         attrib_field = None
         attrib_value = None
+
         if schema_match.get(key) is not None:
+
             attrib_split = schema_match.get(key).split(delimiter)
             # TODO: Does this make sense?
             if delimiter in schema_match.get(key):
@@ -99,7 +102,6 @@ def parse_attr(elem, tbl, schema_match, schema, path, table_list, event):
             if attrib_table is None:
                 attrib_table = get_parent_table(schema, path, table_list).name
             get_table(table_list, attrib_table).add({attrib_field: attrib_value.encode('utf-8')})
-
 
 def parse_text(elem, tbl, schema_match, schema, path, table_list):
     # *********************************************************
@@ -161,6 +163,7 @@ def parse_single(source, schema):
             # *********************************************************
             if event == 'start':
                 path.append(elem)
+
                 if elem.tag == id_tag:
                     primary_key = elem.text
                 try:
@@ -191,9 +194,11 @@ def parse_single(source, schema):
                     #   Record parser.
                     # *********************************************************
             if schema_match is not None:
+
                 tbl = schema_match.get(table_tag)
                 ctr = schema_match.get(counter_tag)
                 curr_table = get_table(table_list, tbl)
+
                 if tbl in open_tables:
                     curr_table.store()
                     if curr_table.counter_name is not '':
@@ -209,16 +214,10 @@ def parse_single(source, schema):
                     curr_table.counter_name = ctr
                     if event == "start":
                         open_tables_no_null_with_counters = [y for y in [x for x in open_tables if x is not None] if get_table(table_list, y).counter_name is not '']
-                        # print open_tables_no_null_with_counters[:-1], curr_table.name
                         for otnnwc in open_tables_no_null_with_counters[:-1]:
                             open_table_not_null_with_counter = get_table(table_list, otnnwc)
                             curr_table.parent_counters[open_table_not_null_with_counter.counter_name] = open_table_not_null_with_counter.counter_value
-                            # curr_table.add({open_table_not_null_with_counter.counter_name: open_table_not_null_with_counter.counter_value})
                         if len(curr_table.parent_counters) > 0:
-                            # print curr_table.parent_counters.items()[-1]
-                            # print curr_table.parent_counters.items()[-1][0]
-                            # print 'One: ', get_table(table_list, open_tables_no_null_with_counters[-2]).counter_name, 'Two: ', get_table(table_list, curr_table.parent_counters.items()[-1]).counter_name
-                            print(get_table(table_list, list(curr_table.parent_counters.keys())[-1][0]).counter_value)
                             if get_table(table_list, open_tables_no_null_with_counters[-2]).counter_value == get_table(table_list, list(curr_table.parent_counters.keys())[-1][0]).counter_value + 1:
                                 curr_table.counter_value += 1
                             else:
@@ -229,67 +228,10 @@ def parse_single(source, schema):
                         for write in curr_table.parent_counters.items():
                             curr_table.add({write[0]:write[1]})
                         curr_table.add({curr_table.counter_name: curr_table.counter_value})
-                        # for z in open_tables_no_null_with_counters[:-1]:
-                        #     temp_table = get_table(table_list, z)
-                        #     # curr_table.parent_counters[temp_table.counter_name] = temp_table.counter_value
-                        # something = list(reversed(open_tables_no_null_with_counters))
-                        # if len(something) == 0:
-                        #     curr_table.counter_value += 1
-                        # else:
-                        #     if len(curr_table.parent_counters) > 0:
-                        #         # print curr_table.parent_counters.items()[-1][1], get_table(table_list, something[-1]).counter_value
-                        #         if get_table(table_list, something[-1]).counter_value == curr_table.parent_counters.items()[-1][1]:
-                        #             curr_table.counter_value += 1
-                        #         else:
-                        #             curr_table.counter_value = 1
-                        #     else:
-                        #         curr_table.counter_value += 1
-                        # for a in curr_table.parent_counters:
-                        #     curr_table.add({a: curr_table.parent_counters[a]})
-                        # curr_table.add({curr_table.counter_name:curr_table.counter_value})
 
+                if event == 'start' and schema_match.get("file_number") is not None:
+                    curr_table.add({"file_number":file_number})
 
-                    # if event == "end":
-                        # print a, curr_table.parent_counters[a]
-                            # print list(reversed(open_tables_no_null_with_counters))
-                        # print open_tables_no_null_with_counters, curr_table.counter_name
-
-                    #     curr_table.counter_name = ctr
-                    #
-                    #     for y in list(curr_table.child_counters)[:-1][:0]:
-                    #         curr_table.child_counters[y] = 1
-                    #
-                    #     for x in open_tables:
-                    #         temp_table = get_table(table_list, x)
-                    #         if temp_table.counter_name is not '':
-                    #             if ctr not in temp_table.child_counters:
-                    #                 temp_table.child_counters[ctr] = 0
-                    #             temp_table.child_counters[ctr] += 1
-                    #             non_null_tables_with_counters = [y for y in
-                    #                                                 [x for x in open_tables if x is not None]
-                    #                                              if get_table(table_list, y).counter_name is not '']
-                    #             print '---'
-                    #             print non_null_tables_with_counters, curr_table.name, len(non_null_tables_with_counters)
-                    #             shrimp = non_null_tables_with_counters[0]
-                    #             if len(non_null_tables_with_counters) > 1:
-                    #                 shrimp = non_null_tables_with_counters[-2]
-                    #             shrimp_table = get_table(table_list, shrimp)
-                    #             for something in shrimp_table.child_counters.items():
-                    #                 curr_table.add({something[0]:something[1]})
-                    #
-                    #             # if len(list(test2)) > 0:
-                    #             #     for asdf in get_table(table_list, test2[0]).child_counters.items():
-                    #             #         curr_table.add({asdf[0]: asdf[1]})
-                    #
-                    #                 # if len(curr_table.child_counters.items()) > 0:
-                    #                 #     curr_table.add({curr_table.child_counters.items()[0][0]: curr_table.child_counters.items()[0][1]})
-                    #
-                    # if event == "end":
-                    #     pass
-                    #
-                    #     # *********************************************************
-                    #     #   Write data to file
-                    #     # *********************************************************
             if event == 'end' and elem.tag == record_tag:
                 # print("Processing record:    " + str(i), "               \r",)
                 i += 1
@@ -301,14 +243,11 @@ def parse_single(source, schema):
                     curr_table.storage = curr_table.storage[::-1]
                     while len(curr_table.storage) > 0:
                         temp = curr_table.storage[-1]
-                        # for x in temp.parent_counters.items():
-                        #     temp.add({x[0]:x[1]})
                         to_write.append(temp.add({id_tag: (primary_key).encode('utf-8')}))
                         curr_table.storage.pop()
                     curr_table.storage = []
                 curr_table.storage = []
                 data_str = ""
-                # for x in [y for y in to_write if y is not None]:
                 for x in to_write:
                     if x.sqlify(primary_key) is not None:
                         data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
