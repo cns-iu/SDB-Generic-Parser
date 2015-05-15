@@ -8,6 +8,8 @@ lxml - Quick XML parser based on the C libraries libxml2 and libxslt
 
 OptionParser - Flexible library for parsing command-line options
 
+psycopg2 - database connector for postgresql. Warning: also needs Visual Studio installed and configured in the path
+
 
 ### Usage
 Run parser.py from the command line.
