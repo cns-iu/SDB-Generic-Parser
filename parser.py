@@ -37,7 +37,6 @@ def verbose_exceptions(ex):
     if verbose:
         print(ex)
 
-
 def get_table(table_list, tblstr):
     if tblstr not in table_list:
         table_list[tblstr] = Table(name=tblstr, id_tag=id_tag, delimiter=delimiter)
@@ -214,17 +213,19 @@ def parse_single(source, schema):
                     curr_table.counter_name = ctr
                     if event == "start":
                         open_tables_no_null_with_counters = [y for y in [x for x in open_tables if x is not None] if get_table(table_list, y).counter_name is not '']
-                        for otnnwc in open_tables_no_null_with_counters[:-1]:
-                            open_table_not_null_with_counter = get_table(table_list, otnnwc)
-                            curr_table.parent_counters[open_table_not_null_with_counter.counter_name] = open_table_not_null_with_counter.counter_value
+
                         if len(curr_table.parent_counters) > 0:
-                            if get_table(table_list, open_tables_no_null_with_counters[-2]).counter_value == get_table(table_list, list(curr_table.parent_counters.keys())[-1][0]).counter_value + 1:
+                            print(get_table(table_list, open_tables_no_null_with_counters[-2]).counter_value, curr_table.parent_counters)
+                            if get_table(table_list, open_tables_no_null_with_counters[-2]).counter_value == curr_table.parent_counters[list(curr_table.parent_counters.keys())[-1]]:
                                 curr_table.counter_value += 1
                             else:
                                 curr_table.counter_value = 1
                         else:
                             curr_table.counter_value += 1
                     # if event == "end":
+                        for otnnwc in open_tables_no_null_with_counters[:-1]:
+                            open_table_not_null_with_counter = get_table(table_list, otnnwc)
+                            curr_table.parent_counters[open_table_not_null_with_counter.counter_name] = open_table_not_null_with_counter.counter_value
                         for write in curr_table.parent_counters.items():
                             curr_table.add({write[0]:write[1]})
                         curr_table.add({curr_table.counter_name: curr_table.counter_value})

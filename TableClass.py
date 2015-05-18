@@ -22,8 +22,9 @@ class Table():
         self.xpath          = ''
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
+
             if type(val) is bytes:
-                val = str(val, 'utf-8')
+                val = str(val, 'utf-8').replace('\\', '\\\\')
             if key in self.fields:
                 self.values[self.fields.index(key)] = val
             else:
