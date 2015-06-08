@@ -14,16 +14,17 @@ from TableClass import Table
 from os import listdir
 from os.path import isfile, join
 import unittest
+import os
 
 parser              = OptParser.config()
 (options, args)     = parser.parse_args()
-dir_path            = options.dir_path          or 'data_files'
-data_file           = options.data_file         or 'data_files/isolated_parse_issue.xml'
+dir_path            = options.dir_path          or ''
+data_file           = options.data_file         or 'isolated_parse_issue.xml'
 schema_file         = options.schema_file       or 'wos_config.xml'
 parent_tag          = options.parent_tag        or 'records'
 record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
-verbose             = options.verbose           or False
+verbose             = options.verbose           or True
 delimiter           = ':'
 table_tag           = 'table'
 counter_tag         = 'ctr_id'
@@ -156,10 +157,9 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
                 to_write.append(temp.add({id_tag: (primary_key).encode('utf-8')}))
                 curr_table.storage.pop()
             curr_table.storage = []
-        curr_table.storage = []
         data_str = ""
         for x in to_write:
-            if x.sqlify(primary_key) is not None:
+            if x.sqlify(primary_key) is not None and len(to_write) > 0:
                 data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
         output_file.write(
             sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%',
@@ -173,6 +173,7 @@ def parse_single(source, schema):
     # cursor.execute('SELECT file_number FROM admin.processing_record WHERE file_name = ' + source + ';')
     # file_number = cursor.fetchone()
     file_number = 1
+
     with open("output/" + source.split("/")[-1].split(".")[0] + "-queries.txt", 'w') as output_file:
         context         = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
         path            = []
@@ -195,7 +196,7 @@ def parse_single(source, schema):
                 try:
                     schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]]))
                 except (SyntaxError):
-                    verbose_exceptions(SyntaxError)
+                    verbose_exceptions("Could not match schema to data: " + str(elem))
                 if schema_match is not None and schema_match.get(table_tag) is not None:
                     open_tables.append(schema_match.get(table_tag))
                     get_table(table_list, schema_match.get(table_tag)).set_xpath(path)
@@ -236,6 +237,9 @@ def parse_single(source, schema):
                 del elem.getparent()[0]
     print('End time:             ' + strftime("%H:%M:%S", gmtime()))
     return True
+
+if not os.path.exists("output"):
+    os.makedirs("output")
 
 ordered_schema = order_schema()
 if (dir_path is not ""):
