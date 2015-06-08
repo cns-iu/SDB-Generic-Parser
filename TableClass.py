@@ -22,9 +22,8 @@ class Table():
         self.xpath          = ''
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
-
             if type(val) is bytes:
-                val = str(val, 'utf-8').replace('\\', '\\\\')
+                val = (str(val)[2:][:-1])
             if key in self.fields:
                 self.values[self.fields.index(key)] = val
             else:
@@ -55,7 +54,7 @@ class Table():
         ))
         return self.clear()
     def set_xpath(self, path):
-        self.xpath = ('/'.join([str(x.tag) for x in path[1:]]))
+        self.xpath = ('/'.join([x.tag for x in path[1:]]))
     def stringify(self, coll, quote_type):
         strin = ''
         for item in coll:
@@ -64,10 +63,10 @@ class Table():
                 if is_number(item):
                     temp_item = str(item)
                 else:
-                    temp_item = quote_type + str(item).strip().replace("'","''") + quote_type
+                    temp_item = quote_type + item.strip().replace("'","''") + quote_type
             strin += temp_item + ','
         strin = strin[:-1]
-        return str(strin)
+        return strin
     def sqlify(self, id):
         fieldstr = self.stringify(self.fields, '"')
         valuestr = self.stringify(self.values, "'")

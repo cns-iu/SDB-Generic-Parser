@@ -19,7 +19,7 @@ import os
 parser              = OptParser.config()
 (options, args)     = parser.parse_args()
 dir_path            = options.dir_path          or ''
-data_file           = options.data_file         or 'isolated_parse_issue.xml'
+data_file           = options.data_file         or 'sample1.xml'
 schema_file         = options.schema_file       or 'wos_config.xml'
 parent_tag          = options.parent_tag        or 'records'
 record_tag          = options.record_tag        or 'REC'
@@ -162,8 +162,8 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
             if x.sqlify(primary_key) is not None and len(to_write) > 0:
                 data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
         output_file.write(
-            sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%',
-                                                                                            str(file_number)))
+            sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%',str(file_number)))
+        # print(data_str)
         table_list.clear()
 
 
@@ -194,7 +194,7 @@ def parse_single(source, schema):
                 if elem.tag == id_tag:
                     primary_key = elem.text
                 try:
-                    schema_match = schema.find('/'.join([str(x.tag) for x in path[1:]]))
+                    schema_match = schema.find('/'.join([x.tag for x in path[1:]]))
                 except (SyntaxError):
                     verbose_exceptions("Could not match schema to data: " + str(elem))
                 if schema_match is not None and schema_match.get(table_tag) is not None:
