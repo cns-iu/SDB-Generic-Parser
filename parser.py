@@ -1,8 +1,9 @@
 # Based on http://stackoverflow.com/questions/9809469/python-sax-to-lxml-for-80gb-xml
 
-# !/usr/bin/env python
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 # import os
-# import sys
+import sys
 # import re
 # import resource
 # import psycopg2
@@ -15,6 +16,7 @@ from os import listdir
 from os.path import isfile, join
 import unittest
 import os
+
 
 parser              = OptParser.config()
 (options, args)     = parser.parse_args()
@@ -161,11 +163,8 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
         for x in to_write:
             if x.sqlify(primary_key) is not None and len(to_write) > 0:
                 data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
-        output_file.write(
-            sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%',str(file_number)))
-        # print(data_str)
+        output_file.write(sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%',str(file_number)).encode('utf-8'))
         table_list.clear()
-
 
 def parse_single(source, schema):
     # cnx = psycopg.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
@@ -174,7 +173,7 @@ def parse_single(source, schema):
     # file_number = cursor.fetchone()
     file_number = 1
 
-    with open("output/" + source.split("/")[-1].split(".")[0] + "-queries.txt", 'w') as output_file:
+    with open("output/" + source.split("/")[-1].split(".")[0] + "-queries.txt", 'wb') as output_file:
         context         = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
         path            = []
         primary_key     = None
