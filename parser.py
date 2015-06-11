@@ -90,7 +90,7 @@ def parse_attr(elem, tbl, schema_match, schema, path, table_list, open_tables):
             attrib_value = value
             if attrib_table is None:
                 attrib_table = open_tables[-1]
-            get_table(table_list, attrib_table).add({attrib_field: attrib_value.encode('utf-8')})
+            get_table(table_list, attrib_table).add({attrib_field: attrib_value})
 
 def parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables):
     """
@@ -118,7 +118,7 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables):
             text_value = elem.text
             if text_table is None:
                 text_table = open_tables[-1]
-            get_table(table_list, text_table).add({text_field: text_value.encode('utf-8')})
+            get_table(table_list, text_table).add({text_field: text_value})
 
 def parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event):
     """
@@ -142,9 +142,12 @@ def parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event
             for otnnwc in open_tables_no_null_with_counters[:-1]:
                 open_table_not_null_with_counter = get_table(table_list, otnnwc)
                 curr_table.parent_counters[open_table_not_null_with_counter.counter_name] = open_table_not_null_with_counter.counter_value
-            curr_table.add({curr_table.counter_name: curr_table.counter_value})
+            curr_table.queue_counter({curr_table.counter_name: curr_table.counter_value})
+            # curr_table.add({curr_table.counter_name: curr_table.counter_value})
             for write in curr_table.parent_counters.items():
-                curr_table.add({write[0]:write[1]})
+                curr_table.queue_counter({write[0]: write[1]})
+                # curr_table.add({write[0]:write[1]})
+            curr_table.dequeue_counters()
 
 def write_to_file(elem, table_list, event, primary_key, output_file, file_number):
     if event == 'end' and elem.tag == record_tag:
@@ -156,7 +159,7 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
             curr_table.storage = curr_table.storage[::-1]
             while len(curr_table.storage) > 0:
                 temp = curr_table.storage[-1]
-                to_write.append(temp.add({id_tag: (primary_key).encode('utf-8')}))
+                to_write.append(temp.add({id_tag: primary_key}))
                 curr_table.storage.pop()
             curr_table.storage = []
         data_str = ""
@@ -222,13 +225,14 @@ def parse_single(source, schema):
                 if tbl in open_tables:
                     curr_table.store()
                     if curr_table.counter_name is not '':
-                        curr_table.add({curr_table.counter_name:1})
+                        curr_table.queue_counter({curr_table.counter_name:1})
+                        # curr_table.add({curr_table.counter_name:1})
                 if elem.tag != record_tag:
                     parse_attr(elem, tbl, schema_match, schema, path, table_list, open_tables)
                     parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables)
                 parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event)
                 if event == 'start' and schema_match.get("file_number") is not None:
-                    curr_table.add({"file_number":file_number})
+                    curr_table.add({"file_number": file_number})
 
             write_to_file(elem, table_list, event, primary_key, output_file, file_number)
             elem.clear()
@@ -241,7 +245,7 @@ if not os.path.exists("output"):
     os.makedirs("output")
 
 ordered_schema = order_schema()
-if (dir_path is not ""):
+if dir_path is not "":
     print(listdir(dir_path))
     for f in listdir(dir_path):
         if isfile(join(dir_path, f)):

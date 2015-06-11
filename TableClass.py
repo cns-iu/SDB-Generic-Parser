@@ -1,11 +1,13 @@
 from collections import OrderedDict
-
+from numbers import Number
 # Only works for numbers and strings, not objects.
 def is_number(s):
-    if type(s) is not str:
+    try:
+        s + 1
         return True
-    else:
+    except TypeError:
         return False
+
 
 class Table():
     def __init__(self, **kwargs):
@@ -20,16 +22,27 @@ class Table():
         self.child_counters = kwargs.get('child_counters', OrderedDict())
         self.parent_counters= kwargs.get('parent_counters', OrderedDict())
         self.xpath          = ''
+        self.queued_counters= []
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
-            if type(val) is bytes:
-                val = val.decode('utf-8').replace('//', '////')
+            if not is_number(val):
+                val = val.replace('//', '////')
             if key in self.fields:
                 self.values[self.fields.index(key)] = val
+                # pass
             else:
                 self.fields.append(key)
                 self.values.append(val)
         return self
+    def queue_counter(self, obj):
+        self.queued_counters.append(obj)
+    def dequeue_counters(self):
+        # from_first_to_last = self.queued_counters[0]
+        # self.queued_counters.pop(0)
+        # self.queued_counters.append(from_first_to_last)
+        for x in self.queued_counters:
+            print x
+            self.add(x)
     def clear(self):
         self.fields = []
         self.values = []
