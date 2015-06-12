@@ -41,7 +41,6 @@ class Table():
         # self.queued_counters.pop(0)
         # self.queued_counters.append(from_first_to_last)
         for x in self.queued_counters:
-            print x
             self.add(x)
     def clear(self):
         self.fields = []
