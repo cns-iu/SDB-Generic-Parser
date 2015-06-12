@@ -4,6 +4,9 @@ SDB-Generic-Parser
 This is a generic parser for SDB. This parser will load a schema XML into memory and reference it as a data file is fed into an iterative parser. For each record, the parser will map the data XPath to the schema and build SQL statements accordingly. 
 
 ### Requirements
+
+Note: This script is built and tested for Python 2.7. Python 3.x seems to work as well, but is not guaranteed. 
+
 The following Python packages are required:
 
 lxml - Quick XML parser based on the C libraries libxml2 and libxslt
