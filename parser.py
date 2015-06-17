@@ -21,7 +21,7 @@ import os
 parser              = OptParser.config()
 (options, args)     = parser.parse_args()
 dir_path            = options.dir_path          or ''
-data_file           = options.data_file         or 'sample1.xml'
+data_file           = options.data_file         or 'test_files/sample1.xml'
 schema_file         = options.schema_file       or 'wos_config.xml'
 parent_tag          = options.parent_tag        or 'records'
 record_tag          = options.record_tag        or 'REC'
@@ -132,12 +132,47 @@ def parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event
         curr_table.counter_name = ctr
         if event == "start":
             open_tables_no_null_with_counters = [y for y in [x for x in open_tables if x is not None] if get_table(table_list, y).counter_name is not '']
-            if len(curr_table.parent_counters) > 0:
-                if get_table(table_list, open_tables_no_null_with_counters[-2]).counter_value == curr_table.parent_counters[list(curr_table.parent_counters.keys())[-1]]:
+            if (len(curr_table.parent_counters) > 0) and (len(open_tables_no_null_with_counters) > 1):
+                # print(open_tables_no_null_with_counters[-2])
+                # print(list(curr_table.parent_counters.keys())[-1])
+                # if get_table(table_list, open_tables_no_null_with_counters[-2]).counter_value == curr_table.parent_counters[list(curr_table.parent_counters.keys())[-1]]:
+                print('comparing')
+                live_table = get_table(table_list, open_tables_no_null_with_counters[-2])
+                live_counters = live_table.parent_counters.copy()
+                live_counters[live_table.counter_name] = live_table.counter_value
+
+                curr_counters = curr_table.parent_counters.copy()
+
+                print(live_counters)
+                print(curr_counters)
+
+                live_counters_without_latest = live_table.parent_counters.copy()
+
+                curr_counters_without_latest = curr_table.parent_counters.copy()
+                print(curr_counters_without_latest)
+                curr_counters_without_latest_key = curr_counters_without_latest.keys()[-1]
+                print(curr_counters_without_latest_key)
+                del(curr_counters_without_latest[curr_counters_without_latest_key])
+
+                print(live_counters_without_latest)
+                print(curr_counters_without_latest)
+
+                # # # In case it turns out hash comparison is preferable:
+                # live_hash = hash(frozenset(live_counters))
+                # print(live_hash)
+                # # live_hashwl = hash(frozenset(live_counters_without_latest))
+                # curr_hash = hash(frozenset(curr_counters))
+                # print(curr_hash)
+                # # curr_hashwl = hash(frozenset(curr_counters_without_latest))
+
+                if live_counters == curr_counters:
+                    print('equal')
                     curr_table.counter_value += 1
                 else:
+                    print('noteq')
                     curr_table.counter_value = 1
             else:
+                # print('unhashed')
                 curr_table.counter_value += 1
             for otnnwc in open_tables_no_null_with_counters[:-1]:
                 open_table_not_null_with_counter = get_table(table_list, otnnwc)
