@@ -31,7 +31,8 @@ Soon we will support command line arguments to prevent the need to modify a scri
 | -a | --dir_path | path of data files. if set, the parser will run for each xml found |
   
 ### Credits
-TODO: Put something here
+This parser is a product of the Cyberinfrastructure for Network Sciences Center at Indiana University.
+Adam Simpson, Daniel Halsey, and Robert Light contributed code and feedback to this project.
 
 ### License
-TODO: Put something here too
+Apache License 2.0
