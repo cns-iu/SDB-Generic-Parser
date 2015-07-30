@@ -101,6 +101,7 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables):
             table as well. That is handled by splitting a
             string if the delimiter exists.
     """
+    # print('Parsing text')
     if elem.text:
         text_table = None
         text_field = None
@@ -108,7 +109,10 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables):
         if elem.text.strip():
             if tbl is not None:
                 text_table = tbl
-            if delimiter in schema_match.text:
+                # print('Text table: '+ text_table)
+            if schema_match.text is not None and delimiter in schema_match.text:
+                # print('Delimiter: '+ delimiter)
+                # print('Schema match: '+ schema_match.text)
                 text_split = schema_match.text.split(delimiter)
                 text_table = text_split[0]
                 text_field = text_split[1]
@@ -127,7 +131,7 @@ def parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event
             for all parent counters to add to the write. If a table is closed
             all of the child counters' values should reset.
     """
-    if ctr is not None:
+    if ctr is not None and delimiter in ctr:
         ctr = ctr.split(delimiter)[1]
         curr_table.counter_name = ctr
         if event == "start":
@@ -173,6 +177,23 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
         output_file.write(sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%',str(file_number)).encode('utf-8'))
         table_list.clear()
 
+def write_to_cache(output_cache, elem, table_list, event, primary_key, output_file, file_number):
+    cache_line = {'elem': elem, 'table_list': table_list, 'event': event, 'primary_key': primary_key, 'output_file': output_file, 'file_number': file_number}
+    output_cache.append(cache_line)
+    # print(len(output_cache))
+
+def write_cached_lines(output_cache, primary_key):
+    if output_cache is not None:
+        for line in output_cache:
+            if primary_key is not None:
+                # print('PK passed: ' + primary_key)
+                write_to_file(line['elem'], line['table_list'], line['event'], primary_key, line['output_file'], line['file_number'])
+            else:
+                # print('PK from line: ' + line['primary_key'])
+                write_to_file(line['elem'], line['table_list'], line['event'], line['primary_key'], line['output_file'], line['file_number'])
+    # else:
+        # print('Cache is empty')
+
 def parse_single(source, schema):
     # cnx = psycopg.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
     # cursor = cnx.cursor()
@@ -187,6 +208,8 @@ def parse_single(source, schema):
         schema_match    = None
         table_list      = OrderedDict()
         open_tables     = []
+        output_cache    = []
+        cache_writes    = True
         print('Start time:           ' + strftime("%H:%M:%S", gmtime()))
         for event, elem in context:
 # *********************************************************
@@ -197,12 +220,16 @@ def parse_single(source, schema):
     #   data.
             if event == 'start':
                 path.append(elem)
-                if elem.tag == id_tag:
+                if elem.tag == id_tag and elem.text is not None:
                     primary_key = elem.text
+                    cache_writes = False
+                    write_cached_lines(output_cache, primary_key)
+                    # print(id_tag + ': ' + elem.text)
+                # print('++' + elem.tag + ': ' + elem.text + '--')
                 try:
                     schema_match = schema.find('/'.join([x.tag for x in path[1:]]))
                 except (SyntaxError):
-                    verbose_exceptions("Could not match schema to data: " + str(elem))
+                    verbose_exceptions("Could not match schema to data: " + str(elem.tag))
                 if schema_match is not None and schema_match.get(table_tag) is not None:
                     open_tables.append(schema_match.get(table_tag))
                     get_table(table_list, schema_match.get(table_tag)).set_xpath(path)
@@ -215,11 +242,11 @@ def parse_single(source, schema):
             if event == 'end':
                 path.pop()
                 open_tables.pop()
-                try:
-                    assert primary_key is not None
-                except AssertionError:
-                    raise Exception(
-                        'Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
+                # try:
+                #     assert primary_key is not None
+                # except AssertionError:
+                #     raise Exception(
+                #         'Cannot find a primary key. Make sure the id_tag value ["' + id_tag + '"] matches the primary key tag in the data.')
     # *********************************************************
     #   Record parser.
             if schema_match is not None:
@@ -232,13 +259,17 @@ def parse_single(source, schema):
                         curr_table.queue_counter({curr_table.counter_name:1})
                         # curr_table.add({curr_table.counter_name:1})
                 if elem.tag != record_tag:
+                    # print('Parsing: ' + '++' + elem.tag + '--')
                     parse_attr(elem, tbl, schema_match, schema, path, table_list, open_tables)
                     parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables)
                 parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event)
                 if event == 'start' and schema_match.get("file_number") is not None:
                     curr_table.add({"file_number": file_number})
 
-            write_to_file(elem, table_list, event, primary_key, output_file, file_number)
+            if cache_writes:
+                write_to_cache(output_cache, elem, table_list, event, None, output_file, file_number)
+            else:
+                write_to_file(elem, table_list, event, primary_key, output_file, file_number)
             elem.clear()
             while elem.getprevious() is not None:
                 del elem.getparent()[0]
