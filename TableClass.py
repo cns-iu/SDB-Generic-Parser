@@ -2,10 +2,14 @@ from collections import OrderedDict
 from numbers import Number
 # Only works for numbers and strings, not objects.
 def is_number(s):
+    # print('Checking if s is a number: ')
+    # print(s)
     try:
-        s + 1
+        float(s)
+        # print('Yes, it is')
         return True
-    except TypeError:
+    except ValueError:
+        # print('No! not a number')
         return False
 
 
@@ -95,11 +99,18 @@ class Table():
                 curr_id = id.split(self.delimiter)[1]
             else:
                 curr_id = id
+
+            temp_id = curr_id
+            if is_number(curr_id):
+                temp_id = str(curr_id)
+            else:
+                temp_id = "'" + curr_id.strip().replace("'","''") + "'"
+
             # useQuotes = "'"
             #     curr_id = str(int(curr_id))
             # if is_number(curr_id):
             #     useQuotes = ""
 
-            return 'INSERT INTO "' + self.name + '" (' + '"id",' + fieldstr + ') VALUES (' + curr_id  + ',' + valuestr + ');\n'
+            return 'INSERT INTO "' + self.name + '" (' + '"id",' + fieldstr + ') VALUES (' + temp_id + ',' + valuestr + ');\n'
         except (Exception):
             pass

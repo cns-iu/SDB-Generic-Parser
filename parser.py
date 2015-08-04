@@ -194,6 +194,16 @@ def write_cached_lines(output_cache, primary_key):
     # else:
         # print('Cache is empty')
 
+def int_or_varchar(s):
+    if s is not None:
+        try: 
+            int(s)
+            return s
+        except ValueError:
+            return "'" + s + "'"
+    else:
+        return s
+
 def parse_single(source, schema):
     # cnx = psycopg.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
     # cursor = cnx.cursor()
