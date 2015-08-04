@@ -10,6 +10,7 @@ import sys
 from time import gmtime, strftime
 from lxml import etree
 from collections import *
+from ordereddict import OrderedDict
 import OptParser
 from TableClass import Table
 from os import listdir

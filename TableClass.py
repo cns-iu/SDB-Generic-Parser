@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from ordereddict import OrderedDict
 from numbers import Number
 # Only works for numbers and strings, not objects.
 def is_number(s):
