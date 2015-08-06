@@ -16,6 +16,7 @@ def is_number(s):
 class Table():
     def __init__(self, **kwargs):
         self.id_tag         = kwargs.get('id_tag', '')
+        self.table_quote    = kwargs.get('table_quote', '"')
         self.delimiter      = kwargs.get('delimiter', ':')
         self.name           = kwargs.get('name', '')
         self.fields         = kwargs.get('fields', [])
@@ -27,6 +28,7 @@ class Table():
         self.parent_counters= kwargs.get('parent_counters', OrderedDict())
         self.xpath          = ''
         self.queued_counters= []
+
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
             if not is_number(val):
@@ -57,6 +59,11 @@ class Table():
         self.counter_value = 0
         return self
     def store(self):
+        # if self.name == 'ct_master':
+        #     print('Storing: ' + self.name)
+        #     # print('Fields: ' + ' | '.join(self.fields))
+        #     print(self.fields)
+        #     # print('Values: ' + ' | '.join(self.values))
         self.storage.append(Table(
             name=self.name,
             fields=self.fields,
@@ -66,7 +73,8 @@ class Table():
             parent_counters=self.parent_counters,
             child_counters=self.child_counters,
             id_tag=self.id_tag,
-            delimiter=self.delimiter
+            delimiter=self.delimiter,
+            table_quote=self.table_quote
         ))
         return self.clear()
     def set_xpath(self, path):
@@ -84,16 +92,21 @@ class Table():
         strin = strin[:-1]
         return strin
     def sqlify(self, id):
-        fieldstr = self.stringify(self.fields, '"')
+        # if self.name == 'ct_master':
+        #     print('SQLifying: ' + self.name)
+
+        fieldstr = self.stringify(self.fields, self.table_quote)
         valuestr = self.stringify(self.values, "'")
         try:
+            # if self.name == 'ct_master':
+                # print('Fields: ' + fieldstr)
             assert len(self.fields) == len(self.values)
         except:
-            print(self.fields)
-            print(self.values)
+            # print(self.fields)
+            # print(self.values)
             raise Exception('Length mismatch. Field(' + str(len(self.fields)) + ') !== value(' + str(len(self.values)) + ')')
         try:
-            assert self.id_tag not in self.fields
+            # assert self.id_tag not in self.fields #TODO: Replace this with a better duplicate removal method--don't just fail it
             assert len(self.fields) > 0
             if (self.delimiter in id):
                 curr_id = id.split(self.delimiter)[1]
@@ -111,6 +124,6 @@ class Table():
             # if is_number(curr_id):
             #     useQuotes = ""
 
-            return 'INSERT INTO "' + self.name + '" (' + '"id",' + fieldstr + ') VALUES (' + temp_id + ',' + valuestr + ');\n'
+            return 'INSERT INTO ' + self.table_quote + self.name + self.table_quote + ' (' + self.table_quote + 'id' + self.table_quote + ',' + fieldstr + ') VALUES (' + temp_id + ',' + valuestr + ');\n'
         except (Exception):
             pass

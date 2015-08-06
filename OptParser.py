@@ -27,6 +27,10 @@ def config()    :
             action='store', type='string', dest='schema_file',
             help='file name and path of the XML schema file. Default: \'wos_config.xml\'')
     parser.add_option(
+            '-t', '--template_file',
+            action='store', type='string', dest='template_file',
+            help='file name and path of the SQL template file. Default: \'sql_template.sql\'')
+    parser.add_option(
             '-v', '--verbose',
             action='store', type='string', dest='verbose',
             help='boolean to determine whether exceptions should be displayed. Default: True')
@@ -34,5 +38,9 @@ def config()    :
             '-a', '--dir_path',
             action='store', type='string', dest='dir_path',
             help='absolute directory path for a list of files to parse. Default: \'\'')
+    parser.add_option(
+            '-q', '--table_quote',
+            action='store', type='string', dest='table_quote',
+            help='character to wrap table names with. Default: \'"\' (double quote character)')
 
     return parser

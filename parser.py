@@ -24,18 +24,20 @@ parser              = OptParser.config()
 dir_path            = options.dir_path          or ''
 data_file           = options.data_file         or 'test_files/sample1.xml'
 schema_file         = options.schema_file       or 'wos_config.xml'
+template_file       = options.template_file     or 'sql_template.sql'
 parent_tag          = options.parent_tag        or 'records'
 record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
 verbose             = options.verbose           or True
 delimiter           = ':'
+table_quote         = options.table_quote       or '\"'
 table_tag           = 'table'
 counter_tag         = 'ctr_id'
 reserved_keys       = [table_tag]
 
-f = open('sql_template.txt', 'r')
-sql_template = f.read()
-f.close()
+sql_template_file = open(template_file, 'r')
+sql_template = sql_template_file.read()
+sql_template_file.close()
 
 def verbose_exceptions(ex):
     if verbose:
@@ -43,7 +45,7 @@ def verbose_exceptions(ex):
 
 def get_table(table_list, tblstr):
     if tblstr not in table_list:
-        table_list[tblstr] = Table(name=tblstr, id_tag=id_tag, delimiter=delimiter)
+        table_list[tblstr] = Table(name=tblstr, id_tag=id_tag, table_quote=table_quote, delimiter=delimiter)
     return table_list[tblstr]
 
 def order_schema():
@@ -162,7 +164,9 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
     if event == 'end' and elem.tag == record_tag:
         to_write = []
         ordered_table_list = sort_statements(ordered_schema, table_list)
+        # print(ordered_table_list)
         for table in ordered_table_list:
+            # print(table)
             curr_table = get_table(table_list, table)
             curr_table.store()
             curr_table.storage = curr_table.storage[::-1]
@@ -173,8 +177,10 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
             curr_table.storage = []
         data_str = ""
         for x in to_write:
-            if x.sqlify(primary_key) is not None and len(to_write) > 0:
-                data_str += '\t\t\t\t\t' + x.sqlify(primary_key)
+            sqx = x.sqlify(primary_key)
+
+            if sqx is not None and len(to_write) > 0:
+                data_str += '\t\t\t\t\t' + sqx
         output_file.write(sql_template.replace('%pkey%', primary_key).replace('%data%', data_str).replace('%file_number%',str(file_number)).encode('utf-8'))
         table_list.clear()
 
@@ -230,7 +236,9 @@ def parse_single(source, schema):
     #   When a new tag opens, try to match the schema to the
     #   data.
             if event == 'start':
+                # print('Started: ' + elem.tag)
                 path.append(elem)
+                # print(path)
                 if elem.tag == id_tag and elem.text is not None:
                     primary_key = elem.text
                     cache_writes = False
@@ -238,7 +246,19 @@ def parse_single(source, schema):
                     # print(id_tag + ': ' + elem.text)
                 # print('++' + elem.tag + ': ' + elem.text + '--')
                 try:
-                    schema_match = schema.find('/'.join([x.tag for x in path[1:]]))
+                    # schema_prefix = '' if record_tag == elem.tag else '/'
+                    schema_to_match = ''
+                    if parent_tag == elem.tag:
+                        schema_match = schema.getroot()
+                    else:
+                        if record_tag == elem.tag:
+                            schema_to_match = elem.tag
+                        else:
+                            schema_to_match = '/'.join([x.tag for x in path[1:]])
+                        # print('Schema to match: ' + schema_to_match)
+                        schema_match = schema.find(schema_to_match)
+                    # print(schema_match.tag)
+                    # print(schema_match.get(table_tag))
                 except (SyntaxError):
                     verbose_exceptions("Could not match schema to data: " + str(elem.tag))
                 if schema_match is not None and schema_match.get(table_tag) is not None:
@@ -246,6 +266,8 @@ def parse_single(source, schema):
                     get_table(table_list, schema_match.get(table_tag)).set_xpath(path)
                 else:
                     open_tables.append(None)
+                    # open_tables.append(open_tables[-1])
+                # print(open_tables)
     # *********************************************************
     #   End event.
     #   When an open tag closes, build strings from each table
@@ -269,16 +291,16 @@ def parse_single(source, schema):
                     if curr_table.counter_name is not '':
                         curr_table.queue_counter({curr_table.counter_name:1})
                         # curr_table.add({curr_table.counter_name:1})
-                if elem.tag != record_tag:
-                    # print('Parsing: ' + '++' + elem.tag + '--')
-                    parse_attr(elem, tbl, schema_match, schema, path, table_list, open_tables)
-                    parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables)
+                # if elem.tag != record_tag:
+                # print('Parsing: ' + '++' + elem.tag + '--')
+                parse_attr(elem, tbl, schema_match, schema, path, table_list, open_tables)
+                parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables)
                 parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event)
                 if event == 'start' and schema_match.get("file_number") is not None:
                     curr_table.add({"file_number": file_number})
 
             if cache_writes:
-                write_to_cache(output_cache, elem, table_list, event, None, output_file, file_number)
+                write_to_cache(output_cache, elem, table_list, event, 'None', output_file, file_number)
             else:
                 write_to_file(elem, table_list, event, primary_key, output_file, file_number)
             elem.clear()
@@ -291,11 +313,13 @@ if not os.path.exists("output"):
     os.makedirs("output")
 
 ordered_schema = order_schema()
+parsed_schema = etree.parse(schema_file)
+# print(parsed_schema.find('..').tag)
 if dir_path is not "":
     print(listdir(dir_path))
     for f in listdir(dir_path):
         if isfile(join(dir_path, f)):
             if f.endswith('.xml'):
-                parse_single(dir_path + "/" + f, etree.parse(schema_file))
+                parse_single(dir_path + "/" + f, parsed_schema)
 else:
-    parse_single(data_file, etree.parse(schema_file))
+    parse_single(data_file, parsed_schema)
