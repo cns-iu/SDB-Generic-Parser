@@ -28,6 +28,7 @@ template_file       = options.template_file     or 'sql_template.sql'
 parent_tag          = options.parent_tag        or 'records'
 record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
+output_folder       = options.output_folder     or './output'
 verbose             = options.verbose           or True
 delimiter           = ':'
 table_quote         = options.table_quote       or '\"'
@@ -218,7 +219,7 @@ def parse_single(source, schema):
     # file_number = cursor.fetchone()
     file_number = 1
 
-    with open("output/" + source.split("/")[-1].split(".")[0] + "-queries.txt", 'wb') as output_file:
+    with open(output_folder + "/" + source.split("/")[-1].split(".")[0] + "-queries.txt", 'wb') as output_file:
         context         = etree.iterparse(source, events=('start', 'end',), remove_comments=True)
         path            = []
         primary_key     = None
@@ -309,8 +310,8 @@ def parse_single(source, schema):
     print('End time:             ' + strftime("%H:%M:%S", gmtime()))
     return True
 
-if not os.path.exists("output"):
-    os.makedirs("output")
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
 
 ordered_schema = order_schema()
 parsed_schema = etree.parse(schema_file)

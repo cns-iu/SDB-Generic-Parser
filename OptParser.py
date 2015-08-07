@@ -7,6 +7,10 @@ def config()    :
             action='store', type='string', dest='data_file',
             help='file name and path of the XML file to be processed. Default: \'test1.xml\'')
     parser.add_option(
+            '-o', '--output_folder',
+            action='store', type='string', dest='output_folder',
+            help='output folder for files. Default: \'./output\'')
+    parser.add_option(
             '-i', '--unique_identifier',
             action='store', type='string', dest='unique_identifier',
             help='I dont know how to word this. Default: \'UID\'')
