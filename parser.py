@@ -30,6 +30,7 @@ record_tag          = options.record_tag        or 'REC'
 id_tag              = options.unique_identifier or 'UID'
 output_folder       = options.output_folder     or './output'
 verbose             = options.verbose           or True
+val_as_string       = options.val_as_string     or False
 delimiter           = ':'
 table_quote         = options.table_quote       or '\"'
 table_tag           = 'table'
@@ -46,7 +47,7 @@ def verbose_exceptions(ex):
 
 def get_table(table_list, tblstr):
     if tblstr not in table_list:
-        table_list[tblstr] = Table(name=tblstr, id_tag=id_tag, table_quote=table_quote, delimiter=delimiter)
+        table_list[tblstr] = Table(name=tblstr, id_tag=id_tag, table_quote=table_quote, delimiter=delimiter, val_as_string=val_as_string)
     return table_list[tblstr]
 
 def order_schema():

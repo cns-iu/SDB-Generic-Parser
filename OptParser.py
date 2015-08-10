@@ -46,5 +46,10 @@ def config()    :
             '-q', '--table_quote',
             action='store', type='string', dest='table_quote',
             help='character to wrap table names with. Default: \'"\' (double quote character)')
+    parser.add_option(
+            '-l', '--val_as_string',
+            action='store', type='string', dest='val_as_string',
+            help='treat all values as strings. Default: False')
+
 
     return parser

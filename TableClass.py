@@ -28,6 +28,7 @@ class Table():
         self.parent_counters= kwargs.get('parent_counters', OrderedDict())
         self.xpath          = ''
         self.queued_counters= []
+        self.val_as_string  = kwargs.get('val_as_string', True)
 
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
@@ -84,10 +85,10 @@ class Table():
         for item in coll:
             temp_item = ""
             if item is not "" and item is not None:
-                if is_number(item):
+                if is_number(item) and not self.val_as_string:
                     temp_item = str(item)
                 else:
-                    temp_item = quote_type + item.strip().replace("'","''") + quote_type
+                    temp_item = quote_type + str(item).strip().replace("'","''") + quote_type
             strin += temp_item + ','
         strin = strin[:-1]
         return strin
@@ -114,10 +115,10 @@ class Table():
                 curr_id = id
 
             temp_id = curr_id
-            if is_number(curr_id):
+            if is_number(curr_id) and not self.val_as_string:
                 temp_id = str(curr_id)
             else:
-                temp_id = "'" + curr_id.strip().replace("'","''") + "'"
+                temp_id = "'" + str(curr_id).strip().replace("'","''") + "'"
 
             # useQuotes = "'"
             #     curr_id = str(int(curr_id))
