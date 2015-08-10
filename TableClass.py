@@ -32,8 +32,10 @@ class Table():
 
     def add(self, obj):
         for key, val in [(key, val) for key, val in obj.items() if key is not self.id_tag]:
+            # if not is_number(val):
+            #     val = val.replace('//', '////')
             if not is_number(val):
-                val = val.replace('//', '////')
+                val = val.replace('\\', '\\\\')
             if key in self.fields:
                 self.values[self.fields.index(key)] = val
                 # pass
@@ -87,8 +89,10 @@ class Table():
             if item is not "" and item is not None:
                 if is_number(item) and not self.val_as_string:
                     temp_item = str(item)
-                else:
+                if is_number(item):
                     temp_item = quote_type + str(item).strip().replace("'","''") + quote_type
+                else:
+                    temp_item = quote_type + item.strip().replace("'","''") + quote_type
             strin += temp_item + ','
         strin = strin[:-1]
         return strin
