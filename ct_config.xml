@@ -1,0 +1,379 @@
+<clinical_study table="ct_master">
+	<required_header>
+		<download_date>ct_master:download_date</download_date>
+		<link_text></link_text>
+		<url>ct_master:source_url</url>
+	</required_header>
+	<id_info>
+		<org_study_id>ct_master:org_study_id</org_study_id>
+		<secondary_id table="ct_secondary_ids" ctr_id="ct_secondary_ids:secondary_id_ctr" type="ct_secondary_ids:secondary_id_type">ct_secondary_ids:secondary_id</secondary_id>
+		<nct_id></nct_id>
+                <nct_alias table="ct_nct_aliases" ctr_id="ct_nct_aliases:nct_alias_ctr">ct_nct_aliases:nct_alias</nct_alias>
+	</id_info>
+	<brief_title>ct_master:brief_title</brief_title>
+	<acronym>ct_master:acronym</acronym>
+	<official_title>ct_master:official_title</official_title>
+	<sponsors>
+		<lead_sponsor table="ct_lead_sponsors" ctr_id="ct_lead_sponsors:sponsor_ctr">
+			<agency>ct_lead_sponsors:agency</agency>
+			<agency_class>ct_lead_sponsors:agency_class</agency_class>
+		</lead_sponsor>
+		<collaborator table="ct_collaborators" ctr_id="ct_collaborators:sponsor_ctr">
+                        <agency>ct_collaborators:agency</agency>
+                        <agency_class>ct_collaborators:agency_class</agency_class>
+		</collaborator>
+	</sponsors>
+	<source>ct_master:source</source>
+	<oversight_info>
+		<authority table="ct_oversight_authorities" ctr_id="ct_oversight_authorities:authority_ctr">ct_oversight_authorities:authority</authority>
+		<has_dmc>ct_master:has_dmc</has_dmc>
+	</oversight_info>
+	<brief_summary>
+		<textblock>ct_master:brief_summary</textblock>
+	</brief_summary>
+	<detailed_description>
+		<textblock>ct_master:detailed_description</textblock>
+	</detailed_description>
+	<overall_status>ct_master:overall_status</overall_status>
+	<why_stopped>ct_master:why_stopped</why_stopped>
+	<start_date>ct_master:start_date</start_date>
+	<completion_date type="ct_master:completion_date_type">ct_master:completion_date</completion_date>
+	<primary_completion_date type="ct_master:primary_completion_date_type">ct_master:primary_completion_date</primary_completion_date>
+	<phase>ct_master:phase</phase>
+	<study_type>ct_master:study_type</study_type>
+	<study_design>ct_master:study_design</study_design>
+	<target_duration>ct_master:target_duration</target_duration>
+	<primary_outcome table="ct_primary_outcomes" ctr_id="ct_primary_outcomes:outcome_ctr">
+		<measure>ct_primary_outcomes:measure</measure>
+		<time_frame>ct_primary_outcomes:time_frame</time_frame>
+		<safety_issue>ct_primary_outcomes:safety_issue</safety_issue>
+		<description>ct_primary_outcomes:description</description>
+	</primary_outcome>
+        <secondary_outcome table="ct_secondary_outcomes" ctr_id="ct_primary_outcomes:outcome_ctr">
+                <measure>ct_secondary_outcomes:measure</measure>
+                <time_frame>ct_secondary_outcomes:time_frame</time_frame>
+                <safety_issue>ct_secondary_outcomes:safety_issue</safety_issue>
+                <description>ct_secondary_outcomes:description</description>
+	</secondary_outcome>
+        <other_outcome table="ct_other_outcomes" ctr_id="ct_primary_outcomes:outcome_ctr">
+                <measure>ct_other_outcomes:measure</measure>
+                <time_frame>ct_other_outcomes:time_frame</time_frame>
+                <safety_issue>ct_other_outcomes:safety_issue</safety_issue>
+                <description>ct_other_outcomes:description</description>
+	</other_outcome>
+	<number_of_arms>ct_master:number_of_arms</number_of_arms>
+	<number_of_groups>ct_master:number_of_groups</number_of_groups>
+	<enrollment type="ct_master:enrollment_type">ct_master:enrollment</enrollment>
+	<condition table="ct_conditions" ctr_id="ct_conditions:condition_ctr">ct_conditions:condition_name</condition>
+	<arm_group table="ct_arm_groups" ctr_id="ct_arm_group:arm_group_ctr">
+		<arm_group_label>ct_arm_groups:arm_group_label</arm_group_label>
+		<arm_group_type>ct_arm_groups:arm_group_type</arm_group_type>
+		<description>ct_arm_groups:arm_group_desc</description>
+	</arm_group>
+	<intervention table="ct_interventions" ctr_id="ct_interventions:intervention_ctr">
+		<intervention_type>ct_interventions:intervention_type</intervention_type>
+		<intervention_name>ct_interventions:intervention_name</intervention_name>
+		<description>ct_interventions:intervention_desc</description>
+		<arm_group_label table="ct_interventions_arm_groups" ctr_id="ct_interventions_arm_groups:arm_group_ctr">ct_interventions_arm_groups:arm_group_label</arm_group_label>
+		<other_name table="ct_interventions_other_names" ctr_id="ct_interventions_other_names:other_name_ctr">ct_interventions_other_names:other_name</other_name>
+	</intervention>
+	<biospec_retention>ct_master:biospec_retention</biospec_retention>
+	<biospec_descr>
+		<textblock>ct_master:biospec_desc</textblock>
+	</biospec_descr>
+	<eligibility>
+		<study_pop>
+			<textblock>ct_master:study_pop</textblock>
+		</study_pop>
+		<sampling_method>ct_master:sampling_method</sampling_method>
+		<criteria>
+			<textblock>ct_master:criteria</textblock>
+		</criteria>
+		<gender>ct_master:gender</gender>
+		<minimum_age>ct_master:minimum_age</minimum_age>
+		<maximum_age>ct_master:maximum_age</maximum_age>
+		<healthy_volunteers>ct_master:healthy_volunteers</healthy_volunteers>
+	</eligibility>
+	<overall_official table="ct_overall_officials" ctr_id="ct_overall_officials:official_ctr">
+		<first_name>ct_overall_officials:first_name</first_name>
+		<middle_name>ct_overall_officials:middle_name</middle_name>
+		<last_name>ct_overall_officials:last_name</last_name>
+		<degrees>ct_overall_officials:degrees</degrees>
+		<role>ct_overall_officials:role</role>
+		<affiliation>ct_overall_officials:affiliation</affiliation>
+	</overall_official>
+	<overall_contact>
+		<first_name>ct_master:contact_first_name</first_name>
+		<middle_name>ct_master:contact_middle_name</middle_name>
+		<last_name>ct_master:contact_last_name</last_name>
+		<degrees>ct_master:contact_degrees</degrees>
+		<phone>ct_master:contact_phone</phone>
+		<phone_ext>ct_master:contact_phone_ext</phone_ext>
+		<email>ct_master:contact_email</email>
+	</overall_contact>
+	<overall_contact_backup>
+                <first_name>ct_master:contact_backup_first_name</first_name>
+                <middle_name>ct_master:contact_backup_middle_name</middle_name>
+                <last_name>ct_master:contact_backup_last_name</last_name>
+                <degrees>ct_master:contact_backup_degrees</degrees>
+                <phone>ct_master:contact_backup_phone</phone>
+                <phone_ext>ct_master:contact_backup_phone_ext</phone_ext>
+                <email>ct_master:contact_backup_email</email>
+	</overall_contact_backup>
+	<location table="ct_locations" ctr_id="ct_locations:location_ctr">
+		<facility>
+			<name>ct_locations:location_name</name>
+			<address>
+				<city>ct_locations:location_city</city>
+				<state>ct_locations:location_state</state>
+				<zip>ct_locations:location_zip</zip>
+				<country>ct_locations:location_country</country>
+			</address>
+		</facility>
+		<status>ct_locations:location_status</status>
+		<contact>
+	                <first_name>ct_locations:contact_first_name</first_name>
+                	<middle_name>ct_locations:contact_middle_name</middle_name>
+        	        <last_name>ct_locations:contact_last_name</last_name>
+	                <degrees>ct_locations:contact_degrees</degrees>
+                	<phone>ct_locations:contact_phone</phone>
+        	        <phone_ext>ct_locations:contact_phone_ext</phone_ext>
+	                <email>ct_locations:contact_email</email>
+		</contact>
+		<contact_backup>
+        	        <first_name>ct_locations:contact_backup_first_name</first_name>
+	                <middle_name>ct_locations:contact_backup_middle_name</middle_name>
+                	<last_name>ct_locations:contact_backup_last_name</last_name>
+        	        <degrees>ct_locations:contact_backup_degrees</degrees>
+	                <phone>ct_locations:contact_backup_phone</phone>
+        	        <phone_ext>ct_locations:contact_backup_phone_ext</phone_ext>
+	                <email>ct_locations:contact_backup_email</email>
+		</contact_backup>
+		<investigator table="ct_location_investigators" ctr_id="ct_location_investigators:investigator_ctr">
+	                <first_name>ct_location_investigators:first_name</first_name>
+        	        <middle_name>ct_location_investigators:middle_name</middle_name>
+	                <last_name>ct_location_investigators:last_name</last_name>
+        	        <degrees>ct_location_investigators:degrees</degrees>
+                	<role>ct_location_investigators:role</role>
+	                <affiliation>ct_location_investigators:affiliation</affiliation>
+		</investigator>
+	</location>
+	<location_countries>
+		<country table="ct_countries" ctr_id="ct_countries:country_ctr">ct_countries:country</country>
+	</location_countries>
+	<removed_countries>
+                <country table="ct_removed_countries" ctr_id="ct_removed_countries:country_ctr">ct_removed_countries:country</country>
+	</removed_countries>
+	<link table="ct_links" ctr_id="ct_links:link_ctr">
+		<url>ct_links:url</url>
+		<description>ct_links:link_desc</description>
+	</link>
+	<reference table="ct_references" ctr_id="ct_references:reference_ctr">
+		<citation>ct_references:citation</citation>
+		<PMID>ct_references:PMID</PMID>
+	</reference>
+	<results_reference table="ct_results_references" ctr_id="ct_results_references:reference_ctr">
+                <citation>ct_results_references:citation</citation>
+                <PMID>ct_results_references:PMID</PMID>
+	</results_reference>
+	<verification_date>ct_master:verification_date</verification_date>
+	<lastchanged_date>ct_master:lastchanged_date</lastchanged_date>
+	<firstreceived_date>ct_master:firstreceived_date</firstreceived_date>
+        <firstreceived_results_date>ct_master:firstreceived_results_date</firstreceived_results_date>
+	<responsible_party table="ct_responsible_party" ctr_id="ct_responsible_party:party_ctr">
+		<name_title>ct_responsible_party:name_title</name_title>
+		<organization>ct_responsible_party:organization</organization>
+		<responsible_party_type>ct_responsible_party:responsible_party_type</responsible_party_type>
+		<investigator_affiliation>ct_responsible_party:investigator_affiliation</investigator_affiliation>
+		<investigator_full_name>ct_responsible_party:investigator_full_name</investigator_full_name>
+		<investigator_title>ct_responsible_party:investigator_title</investigator_title>
+	</responsible_party>
+	<keyword table="ct_keywords" ctr_id="ct_keywords:keyword_ctr">ct_keywords:keyword</keyword>
+	<is_fda_regulated>ct_master:is_fda_regulated</is_fda_regulated>
+	<is_section_801>ct_master:is_section_801</is_section_801>
+	<condition_browse table="ct_browse_condition" ctr_id="ct_browse_condition:condition_ctr">
+		<mesh_term>ct_browse_condition:mesh_term</mesh_term>
+	</condition_browse>
+	<intervention_browse table="ct_browse_intervention" ctr_id="ct_browse_intervention:intervention_ctr">
+                <mesh_term>ct_browse_intervention:mesh_term</mesh_term>
+	</intervention_browse>
+	<clinical_results table="ct_results" ctr_id="ct_results:results_ctr">
+		<participant_flow>
+			<recruitment_details>ct_results:recruitment_details</recruitment_details>
+			<pre_assignment_details>ct_results:pre_assignment_details</pre_assignment_details>
+			<group_list>
+				<group table="ct_results_groups" ctr_id="ct_results_groups:group_ctr">
+					<title>ct_results_groups:group_title</title>
+					<description>ct_results_groups:group_desc</description>
+					<group_id>ct_results_groups:group_id</group_id>
+				</group>
+			</group_list>
+			<period_list>
+				<period table="ct_results_periods" ctr_id="ct_results_periods:period_ctr">
+					<title>ct_results_periods:period_title</title>
+					<milestone_list>
+						<milestone table="ct_results_periods_milestones" ctr_id="ct_results_periods_milestones:milestone_ctr">
+							<title>ct_results_periods_milestones:milestone_title</title>
+							<participants_list>
+								<participants table="ct_results_periods_participants" ctr_id="ct_results_periods_participants:participant_ctr" group_id="ct_results_periods_participants:group_id" count="ct_results_periods_participants:count">ct_results_periods_participants:group_desc</participants>
+							</participants_list>
+						</milestone>
+					</milestone_list>
+					<drop_withdraw_reason_list>
+						<drop_withdraw_reason table="ct_results_periods_drops" ctr_id="ct_results_periods:drops_ctr">
+                                                        <title>ct_results_periods_drops:drop_reason_title</title>
+                                                        <participants_list>
+                                                                <participants table="ct_results_periods_drops_participants" ctr_id="ct_results_periods_drop_participants:participant_ctr" group_id="ct_results_periods_drops_particpants:group_id" count="ct_results_periods_drops_participants:count">ct_results_periods_drops_participants:group_desc</participants>
+                                                        </participants_list>
+						</drop_withdraw_reason>
+					</drop_withdraw_reason_list>
+				</period>
+			</period_list>
+		</participant_flow>
+		<baseline>
+			<population></population>
+			<group_list>
+                                <group table="ct_results_baseline_groups" ctr_id="ct_results_baseline_groups:group_ctr">
+                                        <title>ct_results_baseline_groups:group_title</title>
+                                        <description>ct_results_baseline_groups:group_desc</description>
+                                        <group_id>ct_results_baseline_groups:group_id</group_id>
+                                </group>
+			</group_list>
+			<measure_list>
+				<measure table="ct_results_baseline_measures" ctr_id="ct_results_baseline_measures:measure_ctr">
+					<title>ct_results_baseline_measures:measure_title</title>
+					<description>ct_results_baseline_measures:measure_desc</description>
+					<units>ct_results_baseline_measures:units</units>
+					<param>ct_results_baseline_measures:param</param>
+					<dispersion>ct_results_baseline_measures:dispersion</dispersion>
+					<category_list>
+						<category table="ct_results_baseline_measure_categories" ctr_id="ct_results_baseline_measure_categories:category_ctr">
+							<sub_title>ct_results_baseline_measure_categories:sub_title</sub_title>
+							<measurement_list>
+								<measurement table="ct_results_baseline_measure_values" ctr_id="ct_results_baseline_measure_values:value_ctr" group_id="ct_results_baseline_measure_values:group_id" value="ct_results_baseline_measure_values:value" spread="ct_results_baseline_measure_values:spread" lower_limit="ct_results_baseline_measure_values:lower_limit" upper_limit="ct_results_baseline_measure_values:upper_limit">ct_results_baseline_measure_values:value_note</measurement>
+							</measurement_list>
+						</category>
+					</category_list>
+				</measure>
+			</measure_list>
+		</baseline>
+		<outcome_list>
+			<outcome table="ct_results_outcomes" ctr_id="ct_results_outcomes:outcome_ctr">
+				<type>ct_results_outcomes:outcome_type</type>
+				<title>ct_results_outcomes:outcome_title</title>
+				<description>ct_results_outcomes:outcome_desc</description>
+				<time_frame>ct_results_outcomes:time_frame</time_frame>
+				<safety_issue>ct_results_outcomes:safety_issue</safety_issue>
+				<posting_date>ct_results_outcomes:posting_date</posting_date>
+				<population>ct_results_outcomes:population</population>
+	                        <group_list>
+        	                        <group table="ct_results_outcomes_groups" ctr_id="ct_results_outcomes_groups:group_ctr">
+                	                        <title>ct_results_outcomes_groups:group_title</title>
+                        	                <description>ct_results_outcomes_groups:group_desc</description>
+                                	        <group_id>ct_results_outcomes_groups:group_id</group_id>
+	                                </group>
+        	                </group_list>
+                	        <measure_list>
+                        	        <measure table="ct_results_outcomes_measures" ctr_id="ct_results_outcomes_measures:measure_ctr">
+                                	        <title>ct_results_outcomes_measures:measure_title</title>
+                                        	<description>ct_results_outcomes_measures:measure_desc</description>
+	                                        <units>ct_results_outcomes_measures:units</units>
+        	                                <param>ct_results_outcomes_measures:param</param>
+                	                        <dispersion>ct_results_outcomes_measures:dispersion</dispersion>
+                        	                <category_list>
+                                	                <category table="ct_results_outcomes_measure_categories" ctr_id="ct_results_outcomes_measure_categories:category_ctr">
+                                        	                <sub_title>ct_results_outcomes_measure_categories:sub_title</sub_title>
+                                                	        <measurement_list>
+                                                        	        <measurement table="ct_results_outcomes_measure_values" ctr_id="ct_results_outcomes_measure_values:value_ctr" group_id="ct_results_outcomes_measure_values:group_id" value="ct_results_outcomes_measure_values:value" spread="ct_results_outcomes_measure_values:spread" lower_limit="ct_results_outcomes_measure_values:lower_limit" upper_limit="ct_results_outcomes_measure_values:upper_limit">ct_results_outcomes_measure_values:value_note</measurement>
+
+	                                                        </measurement_list>
+        	                                        </category>
+                	                        </category_list>
+                        	        </measure>
+	                        </measure_list>
+				<analysis_list>
+					<analysis table="ct_results_analysis" ctr_id="ct_results_analysis:analysis_ctr">
+						<group_id_list>
+							<group_id table="ct_results_analysis_groups" ctr_id="ct_results_analaysis_groups:group_ctr">ct_results_analysis_groups:group_id</group_id>
+						</group_id_list>
+						<groups_desc>ct_results_analysis:groups_desc</groups_desc>
+						<non_inferiority>ct_results_analysis:non_inferiority</non_inferiority>
+						<non_inferiority_desc>ct_results_analysis:non_inferiority_desc</non_inferiority_desc>
+						<p_value>ct_results_analysis:p_value</p_value>
+						<p_value_desc>ct_results_analysis:p_value_desc</p_value_desc>
+						<method>ct_results_analysis:method</method>
+						<method_desc>ct_results_analysis:method_desc</method_desc>
+						<param_type>ct_results_analysis:param_type</param_type>
+						<param_value>ct_results_analysis:param_value</param_value>
+						<dispersion_type>ct_results_analysis:dispersion_type</dispersion_type>
+						<dispersion_value>ct_results_analysis:dispersion_value</dispersion_value>
+						<ci_percent>ct_results_analysis:ci_percent</ci_percent>
+						<ci_n_sides>ct_results_analysis:ci_n_sides</ci_n_sides>
+						<ci_lower_limit>ct_results_analysis:ci_lower_limit</ci_lower_limit>
+						<ci_upper_limit>ct_results_analysis:ci_upper_limit</ci_upper_limit>
+						<ci_upper_limit_na_comment>ct_results_analysis:ci_upper_limit_na_comment</ci_upper_limit_na_comment>
+						<estimate_desc>ct_results_analysis:estimate_desc</estimate_desc>
+					</analysis>
+				</analysis_list>
+			</outcome>
+		</outcome_list>
+		<reported_events>
+			<time_frame>ct_results:events_timeframe</time_frame>
+			<desc>ct_results:events_desc</desc>
+			<group_list>
+				<group table="ct_results_events_groups" ctr_id="ct_results+events_groups:group_ctr">
+                                        <title>ct_results_events_groups:group_title</title>
+                                        <description>ct_results_events_groups:group_desc</description>
+                                        <group_id>ct_results_events_groups:group_id</group_id>
+				</group>
+			</group_list>
+			<serious_events table="ct_results_events_serious" ctr_id="ct_results_events_serious:serious_events_ctr">
+                                 <frequency_threshold>ct_results_events_serious:frequency_threshhold</frequency_threshold>
+                                <default_vocab>ct_results_events_serious:default_vocab</default_vocab>
+                                <default_assessment>ct_results_events_serious:default_assessment</default_assessment>
+                                <category_list>
+                                        <category table="ct_results_events_serious_categories" ctr_id="ct_results_events_serious_categories:category_ctr">
+                                                <title>ct_results_events_serious_categories:category_title</title>
+                                                <event_list>
+                                                        <event table="ct_results_events_serious_events" ctr_id="ct_results_events_serious_events:event_ctr">
+                                                                <sub_title>ct_results_events_serious_events:sub_title</sub_title>
+                                                                <assessment>ct_results_events_serious_events:assessment</assessment>
+                                                                <description>ct_results_events_serious_events:event_desc</description>
+                                                                <counts table="ct_results_events_serious_counts" ctr_id="ct_results_events_serious_counts:count_ctr" group_id="ct_results_events_serious_counts:group_id" subjects_affected="ct_results_events_serious_counts:subjects_affected" subjects_at_risk="ct_results_events_serious_counts:subjects_at_risk" events="ct_results_events_serious_counts:event_count"></counts>
+                                                        </event>
+                                                </event_list>
+                                        </category>
+                                </category_list>
+			</serious_events>
+			<other_events table="ct_results_events_other" ctr_id="ct_results_events_other:other_events_ctr">
+			         <frequency_threshold>ct_results_events_other:frequency_threshhold</frequency_threshold>
+                                <default_vocab>ct_results_events_other:default_vocab</default_vocab>
+                                <default_assessment>ct_results_events_other:default_assessment</default_assessment>
+                                <category_list>
+                                        <category table="ct_results_events_other_categories" ctr_id="ct_results_events_other_categories:category_ctr">
+                                                <title>ct_results_events_other_categories:category_title</title>
+                                                <event_list>
+                                                        <event table="ct_results_events_other_events" ctr_id="ct_results_events_other_events:event_ctr">
+                                                                <sub_title>ct_results_events_other_events:sub_title</sub_title>
+                                                                <assessment>ct_results_events_other_events:assessment</assessment>
+                                                                <description>ct_results_events_other_events:event_desc</description>
+                                                                <counts table="ct_results_events_other_counts" ctr_id="ct_results_events_other_counts:count_ctr" group_id="ct_results_events_other_counts:group_id" subjects_affected="ct_results_events_other_counts:subjects_affected" subjects_at_risk="ct_results_events_other_counts:subjects_at_risk" events="ct_results_events_other_counts:event_count"></counts>
+                                                        </event>
+                                                </event_list>
+                                        </category>
+                                </category_list>
+			</other_events>
+		</reported_events>
+		<certain_agreements>
+			<pi_employee>ct_results:pi_employee</pi_employee>
+			<restrictive_agreement>ct_results:restrictive_agreement</restrictive_agreement>
+		</certain_agreements>
+		<limitations_and_caveats>ct_results:limitations</limitations_and_caveats>
+		<point_of_contact>
+			<name_or_title>ct_results:poc_name_or_title</name_or_title>
+			<organization>ct_results:poc_organization</organization>
+			<phone>ct_results:poc_phone</phone>
+			<email>ct_results:poc_email</email>
+		</point_of_contact>
+	</clinical_results>
+</clinical_study>
