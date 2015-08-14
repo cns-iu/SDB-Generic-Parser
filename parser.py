@@ -4,13 +4,10 @@
 # -*- coding: utf-8 -*-
 # import os
 import sys
-# import re
-# import resource
-# import psycopg2
 from time import gmtime, strftime
 from lxml import etree
-from collections import *
-from ordereddict import OrderedDict
+from ordereddict import OrderedDict    # Use this if running Python < 2.7
+# from collections import OrderedDict  # Use this if running Python >= 2.7
 import OptParser
 from TableClass import Table
 from os import listdir
@@ -106,7 +103,6 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables):
             table as well. That is handled by splitting a
             string if the delimiter exists.
     """
-    # print('Parsing text')
     if elem.text:
         text_table = None
         text_field = None
@@ -114,10 +110,7 @@ def parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables):
         if elem.text.strip():
             if tbl is not None:
                 text_table = tbl
-                # print('Text table: '+ text_table)
             if schema_match.text is not None and delimiter in schema_match.text:
-                # print('Delimiter: '+ delimiter)
-                # print('Schema match: '+ schema_match.text)
                 text_split = schema_match.text.split(delimiter)
                 text_table = text_split[0]
                 text_field = text_split[1]
@@ -166,9 +159,7 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
     if event == 'end' and elem.tag == record_tag:
         to_write = []
         ordered_table_list = sort_statements(ordered_schema, table_list)
-        # print(ordered_table_list)
         for table in ordered_table_list:
-            # print(table)
             curr_table = get_table(table_list, table)
             curr_table.store()
             curr_table.storage = curr_table.storage[::-1]
@@ -189,19 +180,15 @@ def write_to_file(elem, table_list, event, primary_key, output_file, file_number
 def write_to_cache(output_cache, elem, table_list, event, primary_key, output_file, file_number):
     cache_line = {'elem': elem, 'table_list': table_list, 'event': event, 'primary_key': primary_key, 'output_file': output_file, 'file_number': file_number}
     output_cache.append(cache_line)
-    # print(len(output_cache))
 
 def write_cached_lines(output_cache, primary_key):
     if output_cache is not None:
         for line in output_cache:
             if primary_key is not None:
-                # print('PK passed: ' + primary_key)
                 write_to_file(line['elem'], line['table_list'], line['event'], primary_key, line['output_file'], line['file_number'])
             else:
-                # print('PK from line: ' + line['primary_key'])
                 write_to_file(line['elem'], line['table_list'], line['event'], line['primary_key'], line['output_file'], line['file_number'])
     # else:
-        # print('Cache is empty')
 
 def int_or_varchar(s):
     if s is not None:
@@ -214,10 +201,6 @@ def int_or_varchar(s):
         return s
 
 def parse_single(source, schema):
-    # cnx = psycopg.connect(host='dbdev.cns.iu.edu', database='wos_test', user='wos_admin', password='57Ax34Fq')
-    # cursor = cnx.cursor()
-    # cursor.execute('SELECT file_number FROM admin.processing_record WHERE file_name = ' + source + ';')
-    # file_number = cursor.fetchone()
     file_number = 1
 
     with open(output_folder + "/" + source.split("/")[-1].split(".")[0] + "-queries.txt", 'wb') as output_file:
@@ -238,15 +221,11 @@ def parse_single(source, schema):
     #   When a new tag opens, try to match the schema to the
     #   data.
             if event == 'start':
-                # print('Started: ' + elem.tag)
                 path.append(elem)
-                # print(path)
                 if elem.tag == id_tag and elem.text is not None:
                     primary_key = elem.text
                     cache_writes = False
                     write_cached_lines(output_cache, primary_key)
-                    # print(id_tag + ': ' + elem.text)
-                # print('++' + elem.tag + ': ' + elem.text + '--')
                 try:
                     # schema_prefix = '' if record_tag == elem.tag else '/'
                     schema_to_match = ''
@@ -257,10 +236,7 @@ def parse_single(source, schema):
                             schema_to_match = elem.tag
                         else:
                             schema_to_match = '/'.join([x.tag for x in path[1:]])
-                        # print('Schema to match: ' + schema_to_match)
                         schema_match = schema.find(schema_to_match)
-                    # print(schema_match.tag)
-                    # print(schema_match.get(table_tag))
                 except (SyntaxError):
                     verbose_exceptions("Could not match schema to data: " + str(elem.tag))
                 if schema_match is not None and schema_match.get(table_tag) is not None:
@@ -268,8 +244,6 @@ def parse_single(source, schema):
                     get_table(table_list, schema_match.get(table_tag)).set_xpath(path)
                 else:
                     open_tables.append(None)
-                    # open_tables.append(open_tables[-1])
-                # print(open_tables)
     # *********************************************************
     #   End event.
     #   When an open tag closes, build strings from each table
@@ -292,9 +266,6 @@ def parse_single(source, schema):
                     curr_table.store()
                     if curr_table.counter_name is not '':
                         curr_table.queue_counter({curr_table.counter_name:1})
-                        # curr_table.add({curr_table.counter_name:1})
-                # if elem.tag != record_tag:
-                # print('Parsing: ' + '++' + elem.tag + '--')
                 parse_attr(elem, tbl, schema_match, schema, path, table_list, open_tables)
                 parse_text(elem, tbl, schema_match, schema, path, table_list, open_tables)
                 parse_counters(schema_match, table_list, open_tables, ctr, curr_table, event)
@@ -316,7 +287,6 @@ if not os.path.exists(output_folder):
 
 ordered_schema = order_schema()
 parsed_schema = etree.parse(schema_file)
-# print(parsed_schema.find('..').tag)
 if dir_path is not "":
     print(listdir(dir_path))
     for f in listdir(dir_path):
